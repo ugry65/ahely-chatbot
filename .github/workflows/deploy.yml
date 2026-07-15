@@ -15,12 +15,11 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Deploy via SFTP
-        uses: wlixcc/SFTP-Deploy-Action@v1.2.4
+        uses: appleboy/scp-action@v0.1.7
         with:
-          server: ${{ secrets.SFTP_HOST }}
+          host: ${{ secrets.SFTP_HOST }}
           port: ${{ secrets.SFTP_PORT }}
           username: ${{ secrets.SFTP_USER }}
           password: ${{ secrets.SFTP_PASSWORD }}
-          local_path: './ahely_v8.html'
-          remote_path: '/'
-          sftp_only: true
+          source: 'ahely_v8.html'
+          target: '/'
