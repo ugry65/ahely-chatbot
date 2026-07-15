@@ -1,0 +1,1135 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>A Hely – Szakember választás - AI asszisztens</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:transparent;display:flex;justify-content:center;align-items:flex-start;min-height:100vh;padding:0}
+#wrap{width:80%;max-width:80%;border-radius:18px;overflow:hidden;display:flex;flex-direction:column;height:auto;max-height:85vh;min-height:300px;background:#fff;box-shadow:0 6px 32px rgba(0,0,0,0.12)}
+#header{background:linear-gradient(135deg,#0BE7DF,#09A8A2);padding:1.25rem 1.5rem;display:flex;align-items:center;gap:14px;flex-shrink:0}
+#header .avatar{width:40px;height:40px;border-radius:50%;background:rgba(255,255,255,0.2);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
+#header-text h2{color:#fff;font-size:22px;font-weight:700;line-height:1.3}
+#header-text p{color:rgba(255,255,255,0.82);font-size:15px;margin-top:3px}
+#disclaimer{background:#fff8e1;border-bottom:1px solid #ffe082;padding:6px 16px;font-size:10.5px;color:#9a8047;line-height:1.4;flex-shrink:0}
+#scrollArea{flex:1 1 auto;min-height:150px;overflow-y:auto;scroll-behavior:smooth;display:flex;flex-direction:column}
+#msgs{flex-shrink:0;padding:1rem;display:flex;flex-direction:column;gap:8px}
+.msg{max-width:88%;padding:14px 18px;border-radius:14px;font-size:17px;line-height:1.65}
+.bot{background:#f2f2f2;color:#1a1a1a;align-self:flex-start;border-bottom-left-radius:4px}
+.user{background:#0BE7DF;color:#fff;align-self:flex-end;border-bottom-right-radius:4px}
+.crisis{background:#fff0f0;border:1px solid #ffb3b3;color:#7a0000;align-self:flex-start;border-radius:12px;max-width:92%}
+.thinking{background:#f2f2f2;color:#999;align-self:flex-start;font-style:italic;border-bottom-left-radius:4px}
+@keyframes dots{0%{content:'.'}33%{content:'..'}66%{content:'...'}99%{content:'.'}}
+.thinking::after{content:'.';animation:dots 1.2s infinite steps(1)}
+#btns{padding:6px 1rem 8px;display:flex;flex-wrap:wrap;gap:6px;flex-shrink:0}
+#btns.off{display:none}
+.b{background:#fff;border:1.5px solid #0BE7DF;border-radius:20px;padding:8px 15px;font-size:13.5px;color:#007A76;cursor:pointer;font-family:inherit;font-weight:500;transition:all 0.15s}
+.b:hover,.b.on{background:#0BE7DF;color:#fff}
+.sec{width:100%;font-size:11px;font-weight:700;color:#007A76;text-transform:uppercase;letter-spacing:0.05em;padding:6px 2px 3px;border-bottom:1px solid #c8f5f3;margin-bottom:2px}
+.tovabb{background:#007A63;color:#fff;border:none;border-radius:20px;padding:8px 20px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;width:100%;margin-top:4px;display:none;position:sticky;bottom:0;z-index:10;box-shadow:0 -2px 8px rgba(0,0,0,0.15)}
+#row{display:flex;gap:8px;padding:0.7rem 1rem;background:#fff;flex-shrink:0}
+#row.off{display:none}
+#restartRow{display:flex;padding:0.5rem 1rem 0;background:#fff;flex-shrink:0;border-top:1px solid #eee}
+#restartBottom{background:#fff;border:1.5px solid #ddd;border-radius:22px;padding:9px 14px;font-size:13px;color:#666;cursor:pointer;font-family:inherit;font-weight:500;flex-shrink:0;white-space:nowrap;transition:all 0.15s}
+#restartBottom:hover{background:#f5f5f5;border-color:#bbb;color:#333}
+#inp{flex:1;border:1px solid #ccc;border-radius:22px;padding:9px 14px;font-size:14px;outline:none;font-family:inherit;background:#fafafa}
+#inp:focus{border-color:#0BE7DF;background:#fff}
+#go{background:#0BE7DF;color:#fff;border:none;border-radius:22px;padding:9px 18px;cursor:pointer;font-size:14px;font-weight:500;font-family:inherit}
+#go:disabled{background:#ccc}
+.card{background:#fff;border:1.5px solid #b0eeec;border-radius:12px;padding:12px 14px;margin-top:2px;max-width:94%;align-self:flex-start;box-shadow:0 1px 4px rgba(0,0,0,0.06)}
+.card img{width:56px;height:56px;border-radius:50%;object-fit:cover;flex-shrink:0;border:2px solid #c8f5f3;display:block}
+.card h4{font-size:14px;font-weight:600;color:#1a1a1a;margin-bottom:2px}
+.card .role{font-size:12px;color:#666;margin-bottom:6px;line-height:1.4}
+.card .tags{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:8px}
+.card .tag{background:#e0fafa;color:#007A76;font-size:11px;padding:2px 8px;border-radius:10px;font-weight:500}
+.card .cap-badge{display:inline-block;font-size:11px;font-weight:600;padding:3px 10px;border-radius:10px;margin-bottom:6px}
+.card .cap-wait{background:#fff3cd;color:#8a6400}
+.card .cap-free{background:#dff5df;color:#1e7d1e}
+.resultSec{width:100%;font-size:11.5px;font-weight:700;color:#007A76;text-transform:uppercase;letter-spacing:0.05em;padding:8px 2px 3px;border-bottom:1px solid #c8f5f3;margin-top:4px}
+.card a{font-size:12px;color:#007A76;text-decoration:none;font-weight:600;border:1px solid #00c4a1;border-radius:20px;padding:4px 12px;display:inline-block;transition:all 0.15s}
+.card a:hover{background:#0BE7DF;color:#fff}
+.inlineRestart{background:#fff;border:1.5px solid #ddd;border-radius:20px;padding:7px 14px;font-size:12.5px;color:#777;cursor:pointer;font-family:inherit;font-weight:500;margin:2px 0;display:inline-block;align-self:flex-start;transition:all 0.15s}
+.inlineRestart:hover{background:#f5f5f5;border-color:#bbb;color:#333}
+@media(max-width:600px){
+  .tovabb{padding:10px;font-size:13px}
+  #wrap{height:100vh;border-radius:0}
+  body{padding:0;align-items:flex-start}
+  .msg{font-size:14px;padding:10px 14px}
+  #header-text h2{font-size:18px}
+  #header-text p{font-size:11px}
+  .b{font-size:12px;padding:7px 13px}
+  #restartBottom{padding:9px 10px;font-size:12px}
+  #disclaimer{font-size:9px;padding:5px 12px;line-height:1.35}
+}
+</style>
+</head>
+<body>
+<div id="wrap">
+  <div id="header">
+    <div class="avatar">&#127807;</div>
+    <div id="header-text">
+      <h2>A Hely &#8211; Szakember választás - AI asszisztens</h2>
+      <p>Segítek megtalálni a megfelelő szakembert</p>
+    </div>
+  </div>
+  <div id="disclaimer">Kerlek, ne irj be különösen érzékeny személyes adatot. Az asszisztens célja az eligazítás, nem diagnózis vagy terápiás konzultáció.</div>
+  <div id="scrollArea">
+    <div id="msgs"></div>
+    <div id="btns" class="off"></div>
+  </div>
+  <div id="restartRow">
+    <button id="restartBottom" onclick="restart()" title="Keresés újraindítása">↺ Keresés újraindítása</button>
+  </div>
+  <div id="row">
+    <input id="inp" placeholder="Válassz vagy írj ide szabadon..." onkeydown="if(event.key==='Enter'){doSend()}">
+    <button id="go" onclick="doSend()">Küldés</button>
+  </div>
+</div>
+<script>
+// Szabad kapacitással rendelkező kollégák azonosítói (id).
+// Alapértelmezetten mindenki "várólista lehetséges" státuszú; ide kell felvenni
+// annak az id-ját, akiről Imre jelzi, hogy jelenleg szabad kapacitással rendelkezik.
+// Ők a keresési/ajánlási listák elején jelennek meg.
+var SZABAD_KAPACITAS = [53,41,9,44,28,26,49,46,15,59]; // 53=Holló Mária, 41=Lőrincz Noémi, 9=Oláh Imre, 44=Szigeti Katalin, 28=Szász Linda, 26=Kocka Alexandra, 49=Czifra Marianna, 46=Terék Anna
+function hasCapacity(sp){ return SZABAD_KAPACITAS.indexOf(sp.id) > -1; }
+
+// Az első megjelenítésnél MINDEN szabad kapacitású jelölt látszódjon,
+// a várólistásokból pedig csak az első 3 (a többi a "További találatok" gombra kerül)
+function pickToShow(candidates){
+  var freeCap = candidates.filter(function(sp){ return hasCapacity(sp); });
+  var waitlist = candidates.filter(function(sp){ return !hasCapacity(sp); });
+  return freeCap.concat(waitlist.slice(0, 3));
+}
+
+var SP = [
+  {id:8,  n:"Keul Andrea",                    a:"keul-andrea",                     r:"Tanácsadó szakpszichológus",                                                       s:"Felnőttek, 14-18 évesek",                            g:"no",    t:"pszichologus", bio:"Szegeden az SZTE Pszichológiai Intézetében és Budapesten az ELTE PPK-n szereztem pszichológusi és tanácsadó szakpszichológusi diplomámat. Az előbbit  tanácsadás - és  iskolapszichológia , az utóbbit  pár és családterápia  szakirányon.\nGyerekek kel először pedagógusként dolgoztam (első diplomámat a Budapesti Tanítóképző Főiskolán szereztem), majd egy általános iskola és gimnázium pszichológusaként gyűjtöttem többéves tapasztalatot.\nEgyéni konzultációk és csoportos programok során jó hangulatú és konstruktív munkára törekszem a gyerekekkel, alkalmazkodva életkori sajátosságaikhoz és egyéni jellemzőikhez. Nagy hangsúlyt fektetek a szülőkkel való közös munkára.\nIntegratív gyerekterápiás képzést elvégeztem, végzettségem megszerzése folyamatban van.\nFelnőttek  fejlesztésével, segítésével 30 éve foglalkozom. Ennek első állomásaként, HR vezetői, tréneri munkám során, az önismereti út bejárásának és a különböző készségek fejlesztésének és a szervezeti működésnek több módját megtapasztaltam.\nJelenleg tanácsadó szakpszichológusként segítek a hozzám fordulóknak.\nAz alábbi módszerekben képződtem, képződöm: TA, Katarzisz Komplex Művészetterápia, Integratív gyermekterápia és Sématerápia\nSzakmai munkám magas színvonalát egyéni szupervízióval, esetmegbeszéléssel és a módszerek csoportos szupervízióival igyekszem megőrizni. Önismereti munkám is folyamatos.\nA gyermekekkel történő munka folyamata : A gyerekekkel való közvetlen munkát mindig egy szülőinterjú előzi meg, ahol átbeszéljük a problémát, beszélgetünk az előzményekről, a szülői elvárásokról. A gyerekekkel két-három alkalom során a probléma jellegének és a gyermek egyéniségének megfelelő módszerekkel diagnosztikai munkát végzek, ennek végén ismét a szülők bevonásával megállapodunk a konzultációk céljában, gyakoriságában és körülbelüli számában. A megtartott alkalmak végén, újra szülőkonzultáció során, tájékoztatom a szülőket az elvégzett munkáról, az eredményekről, javaslatokat fogalmazunk meg a továbbiakra vonatkozóan és vagy lezárjuk a közös munkát, vagy megegyezünk a folytatás mikéntjében.", miben:"A gyermekekkel történő munka folyamata : A gyerekekkel való közvetlen munkát mindig egy szülőinterjú előzi meg, ahol átbeszéljük a problémát, beszélgetünk az előzményekről, a szülői elvárásokról. A gyerekekkel két-három alkalom során a probléma jellegének és a gyermek egyéniségének megfelelő módszerekkel diagnosztikai munkát végzek, ennek végén ismét a szülők bevonásával megállapodunk a konzultációk céljában, gyakoriságában és körülbelüli számában. A megtartott alkalmak végén, újra szülőkonzultáció során, tájékoztatom a szülőket az elvégzett munkáról, az eredményekről, javaslatokat fogalmazunk meg a továbbiakra vonatkozóan és vagy lezárjuk a közös munkát, vagy megegyezünk a folytatás mikéntjében.\nAmiben segítséget tudok nyújtani:\n• Nehéz nevelési helyzetek megoldásában\n• Kortárs kapcsolatok nehézségeinek a kezelésében, beilleszkedési problémákban\n• Iskolai problémák kezelésében, teljesítménnyel vagy viselkedésbeli nehézségekkel összefüggésben\n• Szülő és gyermek közötti konfliktusok kezelésében\n• Testvérféltékenység megjelenésekor\n• Visszahúzódás, gátlásos magatartás megjelenésekor\n• Kamaszkori nehézségek kezelésében\n• Stresszel, teljesítménnyel összefüggő nehézségek kezelésében\n• Viselkedésváltozás, indulatkezelési nehézségek esetén\nFelnőttekkel zajló egyéni tanácsadás :\nA bejelentkezés után az első alkalommal a probléma felvázolása, részletese megismerése a cél. Ezután az együttműködés egy közös cél meghatározásával kezdődik, ehhez igazítjuk a találkozások gyakoriságát, és körülbelüli számában is megállapodunk. A módszereket és az alkalmak felépítését is a klienseim igényeihez, a megjelölt problémához és célhoz igazítom.\nMiben tudok segíteni tanácsadás keretein belül:\n• önbizalom erősítése, önérvényesítés kérdései\n• kommunikációs problémák\n• elköteleződési nehézségek\n• ismétlődő konfliktushelyzetek kezelése\n• szorongás, stressz kezelése\n• indulatkezelési nehézség\n• életvezetéssel, életvitellel kapcsolatos nehézségek\n• párkapcsolati problémák\n• párkeresési nehézségek\n• családi konfliktusok kezelése, megoldása\n• elengedési nehézségek, veszteségfeldolgozás\n• pályaválasztás, karriertervezés\n• munkahelyváltás nehézségei\n• munkahelyi problémák, együttműködéssel, teljesítménnyel összefüggő kérdések", img:"https://a-hely.com/images/andrus%20uj.jpg", prio:3},
+  {id:9,  n:"Oláh Imre",                      a:"olah-imre",                       r:"Coach, Karrier coach",                                                             s:"Felnőttek, Coaching, Karrier tanácsadás",                       g:"ferfi", t:"coach", bio:"Tudom, milyen lelkesen, szinte flow-ban dolgozni, amikor a munkádnak értelme van, szereted, amit csinálsz, és meg is becsülnek érte. És azt is tudom, milyen az, amikor mindez eltűnik: amikor már nem motivál semmi, amikor idegennek érzed magad a munkahelyeden, és nap mint nap felteszed magadnak a kérdést: „Mit keresek itt?”\nTöbb mint 20 év közép- és felsővezetői tapasztalatot szereztem multinacionális cégeknél, állami vállalatoknál és saját vállalkozásban. Munkám során nemcsak vezetőket, hanem munkatársakat is támogattam, láttam, milyen dilemmákkal, bizonytalanságokkal küzdenek, és hogyan lehet ezekből továbblépni.\nMagam is átéltem a kiégést és a karrierváltás félelmeit. Ismerem a létbizonytalanság szorongását, a kockázattól való félelmet – és azt a felszabadító érzést is, amikor eljön a pillanat, hogy „elég volt”, és belevágsz egy új életbe. Ma teljes munkaidőben karrier- és vezetői coachként dolgozom, és abban segítek, hogy te is megtaláld a saját utadat.\nA coaching szemléletű  karrier tanácsadásban  segítek neked:\nfeltárni, mi az, amit valóban szeretnél csinálni,\nkialakítani a konkrét, megvalósítható terved,\nleküzdeni a félelmeket és az önbizalomhiányt,\nmegtalálni a fókuszt, amikor több irány közül kell választani,\nvégigmenni a váltás vagy fejlődés lépésein.\nA  vezetői coachingban  és  mentoringban  támogatlak abban, hogy:\nhiteles és önazonos vezetőként működj,\nmegtaláld az egyensúlyt a teljesítmény, az emberi kapcsolatok és a saját jólléted között,\nfejleszd a kommunikációdat és a visszajelzési kultúrádat,\njobban kezeld a stresszt, a bizonytalanságot és a konfliktusokat,\ntudatosabb, reflektáltabb vezetővé válj, aki képes inspirálni másokat is.\nA mentoring során nemcsak kérdésekkel és tükrözéssel, hanem a saját vezetői tapasztalataimmal is segítelek — ha szükséges, konkrét példákkal, döntési helyzetekkel, megoldási mintákkal dolgozunk.\nA coachingban hiszek a nyílt, őszinte kommunikáció és a személyre szabott figyelem erejében. Aktív, értő figyelemmel kísérlek, hogy megtaláld a saját válaszaidat, és magabiztosan lépj a következő szintre – akár új irányt keresel, akár meglévő pályádon szeretnél továbblépni.\nHa készen állsz arra, hogy végre magadra szánd az időt, és elindulj egy olyan úton, ami valóban rólad szól, akkor itt vagyok, hogy támogassalak.", miben:"Coaching folyamat során olyan kérdésekben és helyzetekben támogatom ügyfeleimet, amelyek a karrierrel, a munkahelyi működéssel vagy a személyes fejlődéssel kapcsolatosak:\nKarrierépítés  – szeretnéd tudatosabban alakítani a karrieredet, de ehhez támogatásra, iránymutatásra van szükséged\nKarrierváltás, pályaorientáció  – munkahelyet váltanál, de nem tudod, merre és hogyan indulj el\nDöntéshelyzet  – komoly választás előtt állsz, és egyedül nehéz átlátni az összefüggéseket\nCélkitűzés és célmegvalósítás  – van célod, de nem tudod, hogyan juthatnál el odáig\nÚj szakmai kihívás  – új munkakörbe vagy pozícióba kerültél, és szeretnél minél gyorsabban jól teljesíteni\nMunka–magánélet egyensúly  – szeretnél kiegyensúlyozottabb, harmonikusabb életet élni\nMunkahelyi konfliktuskezelés  – nehézségeid vannak kollégákkal vagy vezetőkkel, amit hatékonyabban kezelnél\nMotiváció és hatékonyság  – munkatársaid fejlődését, eredményességét szeretnéd elősegíteni\nVezetővé válás támogatása  – újonnan kinevezett vezetőként szükséged van szemléletváltásra és támogatásra\nVezetői készségek fejlesztése  – tapasztalt vezetőként szeretnél még hatékonyabbá, tudatosabbá válni\nÁltalános elakadás vagy kihívás – bármilyen akadály esetén, amikor szükséged van külső, támogató szempontra", img:"https://a-hely.com/images/olahi.jpg", prio:1},
+  {id:11, n:"Ujszászi Andrea",                a:"ujszaszi-andrea",                 r:"Addiktológiai tanácsadó szakpszichológus, pár- és családterapeuta",                s:"Felnőttek, Család és párterápia",                    g:"no",    t:"pszichologus", bio:"Abban hiszek, hogy bárki bármikor képes a fejlődésre, talán csak nem tudja, hogyan kezdjen hozzá. Azt hiszem, én magam is úgy jelentkeztem a pszichológus képzésre, ahogy az emberek szoktak eljutni egy pszichológushoz. Elsőként tanári diplomát szereztem, és csak évekkel később adtam be a felvételi jelentkezésemet pszichológia szakra, addig kerülgettem ezt a hivatást. Idővel érett csak meg bennem az elhatározás. Talán a legtöbb embernél is valahogy így játszódik le a folyamat. Történik valami az életünkben. Nem is biztos, hogy tudjuk, milyen hatással van az ránk, csak évekig cipeljük. Egyszer csak a teher már nem ad más választási lehetőséget, elkerülhetetlen lesz, hogy foglalkozzunk vele. Ha ez nem egyedül, akkor pedig jól jön a segítség. Én az érzelmek kimondásához, a gondolatok megfogalmazásához szükséges védett, elfogadó környezetet tudom biztosítani.\nFérjemmel húsz éve alkotunk egy párt, még a középiskolában ismerkedtünk meg, és a kapcsolatunk olyan erős kötelékké vált, hogy a mai napig is egymás legfőbb támaszai vagyunk. Három gyermekünk született. Nagy ajándék az élettől, hogy már ilyen korán találkoztunk. Ezzel viszont az is együttjár, hogy sok nehézséggel kellett már megküzdenünk. Volt olyan, ahonnan tényleg nehéz volt visszajönni. Mégis sikerült, mert elköteleztük magunkat egymás mellett, így háttérbe tudtuk szorítani a saját sérelmeinket, és időt tudtunk adni a megoldásnak. Minden párkapcsolat fejlődésen megy keresztül, és ebben a folyamatban elakadások következhetnek be, melyek viszont mindkét fél közös elszántságának köszönhetően oldhatóak. A párterápia során ezekkel dolgozunk, hogy a párkapcsolati fejlődés tovább folytatódhasson.\nFérjemmel mindketten egyetértünk abban, hogy a mi legnagyobb tanítóink pedig a gyerekeink. Azóta tanultuk a legtöbbet, amióta ők megszülettek, önmagunkról, szeretetről, kapcsolatokról, családi folyamatokról, a világról, a változásokról. A családterápia azokat a folyamatokat tárja fel, amelyek hozzájárulnak a jelenlegi nem kívánt helyzethez, és a különböző módszerek felhasználásával arra törekszünk, hogy ezek minden családtag előnyére válva átalakulhassanak.\nHa úgy gondolja, segítségére tudok lenni, a fenti elérhetőségeken fel tudja venni velem a kapcsolatot.\nPszichológus diplomámat a Szegedi Tudományegyetemen szereztem meg klinikai és egészségpszichológia szakirányon. Család- és párterapeuta jelölt vagyok.\nÁr: érdeklődjön telefonon\nEmail: andi.ujszaszi@gmail.com", miben:"A  családterápia  középpontjában a család, illetve az egyén családi kapcsolatai állnak. A családterapeuták a családot olyan rendszerként kezelik, mely állandó változásban, fejlődésben van, miközben fenntartja folyamatosságát és viszonylagos állandóságát. A gyakorlatban mindez azt jelenti, hogy amikor az egyik családtag változik, az hat a többiekre is, így az egyén problémája a család problémája, jólléte is közös érdek, így együttes munka eredménye lehet. A családterápiás folyamat általában 6 – 25 ülésben zajlik a probléma természetétől függően. Az ülések gyakorisága 2-3 hét. A családterápia egyre elterjedtebb változata a  párterápia . Házaspárok, élettársak problémás élethelyzetekben, kapcsolatuk aktuális elakadásában kérhetik a szakemberek segítségét. Például: • „Hiányzik a régi közelségérzés…” • „Mindig ugyanazokon a dolgokon veszekszünk…” • „Nem értem, hogyan változhattunk meg ennyire…” • „Miért nincs egymásra időnk mostanában…” • „Hová lett a gyengédség és szenvedély…” Mikor az adott problémával foglalkozunk, nem csak annak megoldására nyílik lehetőség, hanem tartós változások is születhetnek, és maga a kapcsolat új, őszintébb alapokra kerülhet. Vannak azonban olyan esetek, amikor a válás, a kapcsolat addigi formájának felbontása mellett dönt a pár, ilyenkor lehet segítség a párterápia speciális formája, a válásterápia. A  válásterápia  során • biztonságos közegben lehet megfogalmazni az érzéseket, • áttekinthető, ki hogyan változott, fejlődött a kapcsolatban, • lehetőség van a közösen létrehozott értékek tudatosítására, és annak megélésére, hogy mindez nem veszik el a kapcsolat lezárásával, hiszen már beépült az egyén szintjén. Gyermekes párok esetén lehetőség van a szülőtársi kapcsolat, együttműködés kereteinek, szabályainak kialakítására, hiszen ez a párkapcsolat megszűnésével nem ér véget, hanem élethosszig tart.", img:"https://a-hely.com/images/ujszasziandi.jpg", prio:3},
+  {id:13, n:"Meixner Veronika",               a:"meixner-veronika",                r:"Gyermek- és ifjúsági klinikai szakpszichológus, tanácsadó szakpszichológus",      s:"Felnőttek, 3-6 évesek, 7-18 évesek",                g:"no",    t:"klinikai", bio:"A Debreceni Egyetem pszichológia szakának elvégzése után az ELTE-n tanácsadó szakpszichológus szakvizsgát, a pécsi egyetemen klinikai szakpszichológus szakvizsgát tettem. Elvégeztem az EGO Klinika módszerspecifikus képzését, ahol analitikusan orientált gyermekterapeuta képesítést szereztem.\nFelnőtt tanácsadó szakpszichológusként, valamint gyermek klinikai szakpszichológusként és gyermekterapeutaként fogadom a hozzám forduló felnőtt, illetve gyermek és serdülő klienseket.\nTöbb, mint 18 éve dolgozom pszichológusként. Felnőttek elsősorban krízisek, életvezetési nehézségek, valamint stressz-és konfliktuskezelési problémák esetén keresnek fel. Gyermekekkel és családjukkal elsősorban magatartási és érzelmi nehézségek megoldásában dolgozom együtt, a szülőket konzultációval, tanácsadással segítem.", miben:"Felnőtteknek:\n- krízishelyzetek kezelése\n- önismereti munka\n- önértékelés, önérvényesítés fejlesztése\n- élethelyzeti elakadások\n- stresszkezelés és stresszel való megküzdés\n- kapcsolati nehézségek\n- teljesítménnyel kapcsolatos problémák\nGyermekeknek: \n• Nevelési kérdésekben\n• Nehéz nevelési helyzetek megoldásában\n• Magatartási gondok és társas kapcsolatok esetén:\n• szófogadatlanság\n• dac\n• dühkitörések\n• nyugtalanság\n• szétszórtság\n• visszahúzódás\n• agresszivitás\n• szorongás\n• Vizelet-, széklettartási problémákban\n• Nehéz családi eseményeknél:\n• testvérszületés\n• válás\n• betegség\n• haláleset\n• Váratlan viselkedésváltozás, teljesítményromlás esetén\n• Eltérő fejlődés gyanúja esetén\n• Visszahúzódás, gátlásos magatartás megjelenésekor              \n• Indokolatlannak tűnő félelmek, fóbiák esetén\n• Óvodai, beilleszkedési nehézségek esetén\n• Iskolaérettségi kérdésekben\n• Tanulási, iskolai teljesítménnyel kapcsolatos problémáknál\n• Iskolai beilleszkedési nehézségek esetén\n• Teljesítménycsökkenés, teljesítményszorongás esetén\n  Hogyan tudok segíteni:\nA pszichológiai foglalkozások első lépése a szülővel folytatott első beszélgetés, amelynek célja a probléma megfogalmazása, a gyermek pszichológiai fejlődésnek megismerése, a lehetséges okok feltérképezése.\nEzt követően néhány alkalommal a gyermekkel való megismerkedés, a probléma feltárása történik különböző tesztekkel, vizsgáló eljárásokkal, játékokkal, beszélgetéssel.\nEzután kerül sor a szülővel való konzultációra, melynek során megfogalmazódnak a terápiás célok és keretek, azaz a kezelés célja, rendszeressége és időtartama.", img:"https://a-hely.com/images/meixner.jpg", prio:3},
+  {id:15, n:"Spák Brigitta",                  a:"spak-brigitta",                   r:"Tanácsadó szakpszichológus, Gyászfeldolgozás Módszer Specialista",                 s:"Felnőttek",                                          g:"no",    t:"pszichologus", bio:"Spák Brigitta vagyok, Tanácsadó szakpszichológus, pár és család tanácsadás specializációval.\n2007 óta, azaz több mint 15 éve dolgozom pszichológusként. Budapesti es vidéki intézményekben, óvodákban, iskolákban és Nevelési Tanácsadóban szereztem széleskörű tapasztalatot, ami az egyéni felnőtt konzultációs munkámat is szélesebb szakmai látókörrel segíti. Magánrendelésen 2009 óta dolgozom felnőttekkel. A felnőtt magánrendelésem mellett jelenleg is két belvárosi iskolában segítem a hozzám forduló gyerekeket és szüleiket.\nÁr: 18 000Ft, 50 perc\nEmail: spakbrigi@gmail.com", miben:"Munka világa\n• Munkahelyi stressz\n• Csapatban vagy egyénileg?\n• Munkahelyi mobbing\n• Kiégés (Burn out)\n• Pályaválasztási kérdések\n• Fiatalkori munkahely kezdési un. Kapunyitási pánik\n• Karrier váltás, munkahely vesztés\nMagánélet/párkapcsolat/család\n• Párkeresési/párválasztási nehézségek\n• Párkapcsolati elköteleződési bizonytalanság\n• Párkapcsolati konfliktusok, indulatkezelési nehézségek\n• Szexuális problémák, párkapcsolati hűtlenség\n• Gyermekvállalási bizonytalanság, fogantatási problémák, pszichés eredetű meddőség, lombik kezeléssel járó lelki megterhelés\n• nehéz szüléstörténet feldolgozása, GYES alatti és utáni stresszel való megküzdés, szorongásos, indulatkezelési kérdések\n• szerepkonfliktusokból (szülői-partner - munkavállalói szerep stb.) adódó feszültségek, Család alakulása utáni önérvényesítési kérdések, munka-magánélet egyensúlyának megtalálása\n• nevelési nehézségek, konfliktusok, aktuális élethelyzeti nehézségek kezelése (kistestvér születése, óvodai, iskolai beilleszkedési problémák)\n• szülők közötti konfliktusok, párom gyerekét neveljem? (mozaikcsalád nehézségei)\n• Családon belüli problémák, szülőkkel, testvérrel, közeli hozzátartozóval való kapcsolati problémák\nÖnismereti kérdések\n• Önismereti kérdések\n• Önbizalomhiány\n• Élet-közepi válság (midlife crisis),\n• Szorongás, stressz, pánik okozta problémák, alvászavarok\n• Válás, szakítás, baleset, gyász, krízisek feldolgozása\n• Időskori önismereti kérdések, megváltozott szerepek, nyugdíjas kor nehézségei\nTanácsadói munkám középpontjában a tünetek hátterében álló pszichés mechanizmusok megértése áll. Szorongás, stressz esetén gyakran alkalmazom az Autogén Tréning nevű relaxációs eljárást valamint kognitív elemeket. Pánikbetegség esetén a konzultációk célja a pánikos viselkedés megértése, a pánikrohamok oldásának megtanítása, az anti-pánik óra keretében. Családi, párkapcsolati problémák esetén családi rendszerszemléletben gondolkodom, ami a párkapcsolati problémák megoldásában nagyon hatékonyan tud segíteni.  Igény esetén Skype-on történő online konzultációt is vállalok. Pszichológusként segítek megérteni és megváltoztatni a problémás viselkedés-mintákat és feltárni a fejlődéshez szükséges pszichés erőforrásokat.\nAmennyiben szeretné, hogy kísérjem ezen az úton, forduljon hozzám bizalommal!", img:"https://a-hely.com/images/spak.jpg", prio:3},
+  {id:16, n:"Tóth Andrea",                    a:"toth-andrea",                     r:"Pszichológus, Szexuálpszichológiai szakpszichológus",                              s:"Felnőttek, 14-18 évesek",                            g:"no",    t:"pszichologus", bio:"Pszichológiai tanácsadás és beavatkozás szakirányon végeztem a Babeș-Bolyai Tudományegyetemen, valamint az ELTE Szakképzésén Szexuálpszichológiai szakpszichológus diplomát szereztem. A pszichológia a kezdetektől fogva vonzott, pályaváltóként hosszú utat jártam be, mire megtaláltam a végleges helyemet a segítő szakmában. Dolgoztam családsegítőben, ezt követően általános iskolában, iskolapszichológusként.\nPszichológusi munkámban elsősorban a stressz csökkentésére, az önismeret fejlesztésére, és a mentális egészség megőrzésére fókuszálok. Egyéni tanácsadás keretein belül, klinikai szempontból egészséges felnőttekkel és serdülőkkel foglalkozom. Segítem azokat a fiatal felnőtteket is, akiknek nehézséget jelent az „életben” való elindulás.\nA hozzám fordulókat kísérem nehéz élethelyzetek, elakadások meghaladásában, döntési helyzetek megoldásában, konfliktusok rendezésében, melyek mindennapi életüket akadályozzák.\nEzeken túl, segítem a hozzám fordulókat a szexualitással, intimitással kapcsolatos nehézségek mentén felmerülő problémák, gátak felismerésében és a kapcsolatteremtés működésének megértésében. Affirmatív szemléletű segítőként támogatom a szexuális és nemi kisebbséghez tartozó személyek önelfogadásását.\nKlienseim biztonságos fejlődése és szaktudásom mélyítése számomra felelősség, ezért folyamatos szupervízió mellett dolgozom. Törekszem a helyzetekből tanulni és köszönöm mindazoknak, akik beengednek életükbe. Hiszem, hogy a változás első lépése a változtatás gondolata, mely elvezethet az igazi előre lépéshez.\nJelenleg az Integratív Pszichoterápiás Egyesület képzésén veszek részt.", miben:"•\n• Életvezetési tanácsadás  – Életével kapcsolatos céljait, szükségleteit, gondolatait közösen megfogalmazzuk, aktuális problémái fókusza mentén.\n• Önismeret és személyiségfejlesztés  – Pozitív énképe és önbecsülése mélyítésével feltárjuk rugalmasabb, magabiztosabb személyiségét.\n• Stressz és szorongás oldás  – Rossz hangulatként megnyilvánuló különböző negatív testi és érzelmi állapotait feltérképezzük, átkeretezzük.\n• Érzelmi problémák, társas kapcsolati konfliktusok kezelése  – Személyközi bonyodalmaknál, berögzült mintáit újragondoljuk, a nehézségek hatékonyabb megoldása érdekében.\n• Nehéz életesemény, döntési helyzetek  – Nem várt élethelyzetekben az összetett problémákat, dilemmákat új megvilágításba helyezzük.\n• Szexuális nehézségek  - Szexualitással és intimitással kapcsolatos személyiségbeli gátak felismerését előmozdítjuk.\n• Párkapcsolati elakadások, pártalálási nehézségek  - Kötődés és kapcsolatteremtés működésének megértésével elérhető a kiegyensúlyozott kapcsolat.\n• Serdülő és fiatal felnőtt tanácsadás  – A leválással, önállósággal és teljesítménnyel összefüggő feszültségekből eredő önbizalomhiány fejlesztése.\nAmennyiben a fentiek alapján szimpatikusnak talált, bátran vegye fel velem a kapcsolatot a fenti elérhetőségeken. Ha szeretne többet megtudni rólam, látogasson el honlapomra:  http://avaltozas.hu/", img:"https://a-hely.com/images/Toth%20andi.jpg", prio:3},
+  {id:17, n:"Dr. Perger Mónika",              a:"dr-perger-monika",                r:"Tanácsadó szakpszichológus, Gyászfeldolgozás Módszer Specialista, Párterapeuta",  s:"Felnőttek, Család és párterápia",                    g:"no",    t:"pszichologus", bio:"A változás nem könnyű, bátorság kell hozzá. Ahhoz, hogy merjünk valami újat kipróbálni el kell engednünk a meglévőt, ami ugyan biztonságot ad, de már nem elégíti ki az igényeinket. A változtatás sokszor hosszú út eredménye, amely során szükség lehet külső segítőre is. Ez nem a gyengeség jele, hanem egy olyan fontos felismerés, ami előrevisz az úton. Olyan segítő tudok lenni ebben a folyamatban, aki meghallgat, elfogad, aki támogat a változáshoz szükséges lépések megtalálásában és a változáshoz szükséges erőforrások felfedezésében.\n  Bemutatkozás\nPszichológusi munkámat gyermekekkel kezdtem; dolgoztam általános iskolában iskolapszichológusként, majd nevelőszülőknél kihelyezett gyermekekkel és több évig nevelési tanácsadóban. A gyerekekkel végzett munkám során egyre inkább a családi működésre irányult a figyelmem, így az egész családdal kezdtem el dolgozni, ehhez képződtem, lettem családterapeuta. Az utóbbi években főként párokkal dolgozom hosszabb együttélések során előforduló nehézségek esetén, mint érzelmi eltávolodás, harmadik fél megjelenése miatti bizalomvesztés vagy válási krízis. Azokkal a párokkal is szívesen dolgozom, akik kapcsolatuk megújítása érdekében vállalják a közös munkát.\nTanácsadó szakpszichológusként egyéni helyzetekben is rendszerszemléletben dolgozom a hozzám forduló felnőtt kliensekkel, figyelembe véve azt a társas közeget, amelyben az elakadások megjelentek. Főként életvezetési nehézségekkel, a munkában és a magánéletben felmerülő kérdésekkel foglalkozom, az önismeret, a tudatosabb működés megsegítésén dolgozva. Szívesen segítem a pályájuk kezdetén lévő fiatal felnőtteket, akik elbizonytalanodtak a tanulmányaikban, karrierjükben vagy a párkeresés nehézségeivel néznek szembe. A gyermeket nevelő, a munka-család között egyensúlyozó felnőtteket a kihívások kezelésében, a saját erőforrások felfedezésében támogatom. Két gyermek édesanyjaként az évek során jó magam is sokszor megéltem ezt a helyzetet. Az életközépi dilemmákkal szembenéző, újra önmagát kereső felnőtteknek az útkeresésben, a megújulásban igyekszem segíteni. Fontosnak tartom, hogy az életünk fő területei egyensúlyban legyenek, ez hozzá tud járulni ahhoz, hogy harmóniában élhessünk önmagunkkal és a körülöttünk lévőkkel. Az utóbbi években haláleseti gyász, válás és párkapcsolati szakítás érzelmi veszteségének feldolgozásában is kísérem a hozzám fordulókat, mint Gyászfeldolgozás Módszer® Specialista.\nÁr: érdeklődjön telefonon", miben:"• pszichológiai tanácsadás : egyéni helyzetben életvezetési nehézségek, dilemmák, önismereti igény esetén\n• párkapcsolati tanácsadás/párterápia : párkapcsolati nehézségek (érzelmi eltávolodás, válási krízis) és a párkapcsolat erősítése céljából, ha szeretnék megérteni és hatékonyabban kezelni konfliktusaikat\n• autogén tréning:  egyéni helyzetben a hatékonyabb stresszkezelés, ellazulás céljából\n• veszteség- és gyászfeldolgozás : egyéni helyzetben párkapcsolati szakítás, válás, haláleseti gyász feldolgozásának megsegítéséhez", img:"https://a-hely.com/images/perger.jpg", prio:3},
+  {id:18, n:"Mazányi Judit",                  a:"mazanyi-judit",                   r:"Tanácsadó szakpszichológus, sémakonzultáns jelölt",                                s:"Felnőttek",                                          g:"no",    t:"pszichologus", bio:"Az ELTE Bölcsészkarán végeztem pszichológusként 1997-ben, majd 2008-ban szereztem meg a tanácsadó szakpszichológusi végzettséget krízis tanácsadás szakirányon. Főállásban pályaalkalmassági szakterületen dolgozom, itt szupervízori és szakértői feladatokat is ellátok. Emellett  tréning csoportokat vezetek és egyéni tanácsadást tartok.\nTovábbi szakmai végzettségek:\n- autogén tréning képzés\n- pszichoterapeuta képzés\n- relaxáció-meditáció-imagináció képzés", miben:"• önértékelési, önérvényesítési problémák\n• életvezetési problémák\n• stressz kezelési problémák\n• konfliktus kezelési problémák\n• kapcsolati problémák\n• munkahelyi problémák\n• akut élethelyzeti nehézség, veszteség, krízis\n• pszichoszomatikus jellegű problémák", img:"https://a-hely.com/images/mazanyi.jpg", prio:3},
+  {id:22, n:"Mészár Tünde Andrea",            a:"meszar-tuende-andrea",            r:"Tanácsadó szakpszichológus",                                                       s:"Felnőttek, 14-18 évesek",                            g:"no",    t:"pszichologus", bio:"2008-ban diplomáztam pszichológusként az ELTE-n, majd 2020-ban ugyanitt végeztem el a tanácsadó szakpszichológus képzést krízis szakirányon. 2005 óta a szakmám több területét megjártam, melynek köszönhetően széleskörű tapasztalatokra tettem szert. Kezdetben évekig dolgoztam a szervezetfejlesztés területén, mint tanácsadó pszichológus. Képzéseket vezettem, tréningek során segítettem a résztvevők kompetenciáit, képességeit fejleszteni. Majd évekig végeztem terápiás munkát börtönpszichológusként. Segítettem a hozzám érkező fogvatartottakat stresszkezelés, konfliktuskezelés terén, támogattam őket kríziseikkel, illetve szuicid késztetéseikkel való megküzdésük során. 2016-2021 között pedig a vezető-kiválasztáshoz nélkülözhetetlen alkalmasság vizsgálatokat, kompetencia felméréseket (AC) végeztem, segítve a felkérő szervezeti egységeket a legalkalmasabb vezető kinevezésében. Jelenleg 2021. márciusában a 18. Kerületi Pedagógiai Szakszolgálathoz mentem át pszichológusi munkakörbe, ahol gyermekek pszichés ellátását végzem és amely tevékenység mellett könnyebben tudom magánrendelésen fogadni az egyéni tanácsadásra hozzám jelentkezőket.\n Képződtem a pszichodráma és tranzakció analízis módszereiben, illetve a tanácsadó szakpszichológus, krízis szakirányú képzésen, melyeken szerzett ismereteimet integrálom a tanácsadói munkám során. A terápiás folyamat alatt nagy hangsúlyt fektetek az egyén kapcsolati dinamikájára, a tanácsadás során felszínre kerülő érzelmeivel való munkára. \nA tanácsadásban szem előtt tartom, hogy habár a múltat nem tudjuk megváltoztatni, a kapott sérelmeket nem vagyunk képesek meg nem történtté tenni, de lehetőségünk van azokat megérteni és a jelenünkre, jövőnkre gyakorolt hatásukat befolyásolni. Ezáltal kellő munkával képessé válunk megvalósítani a jövőnkben rejlő lehetőségeket.\nÁr: érdeklődjön telefonon", miben:"– felnőttek egyéni tanácsadása\n– krízis helyzetek kezelése (fejlődési és akcidentiális krízisek esetén egyaránt) – életkezdési elakadás („kapunyitási pánik), életközépi válság („kapuzárási pánik”)\n– pályaorientáció-pályaválasztás\n– beilleszkedési-kapcsolatteremtési nehézségek\n– karrierváltás, karriertartás, életvezetési elakadások\n– döntési nehézségek, halogatás\n– szorongásos tünetek, pánikzavar, stressz kezelési problémák\n– önbizalom, önértékelés problémái, identitás kérdései – érzelmi függőség, párkapcsolati és családi problémák\n– tanácsadás válás esetén a válás gyerekekre való hatásáról, az optimális kapcsolattartásról\n– félelmek, veszteségélmények, gyászfeldolgozás\n– krónikus betegségekkel való együttélés és megküzdés", img:"https://a-hely.com/images/meszar.jpg", prio:3},
+  {id:25, n:"Barcs Krisztina",                a:"barcs-krisztina",                 r:"Pszichológus",                                                                     s:"Felnőttek",                                          g:"no",    t:"pszichologus", bio:"Nem szokványos bemutatkozás  ITT . Tanulmányok: 2014-2015 Családállítás képzés, 2 félév 2010-2014 Katathym Imaginatív Pszichoterápiás képzés, 4 félév 2008-2010 Integrál Pszichológia szak, 4 félév 1998-2003 Debreceni Egyetem, pszichológia, angol szakfordító, tanár szak Nyelvtudás: angol felsőfokú „C” állami nyelvvizsga francia, japán kezdő szint Eddigi munkahelyek: 2009- -pszichológus, egyéni tanácsadás 2005 - -pszichológiatanár, Raoul Wallenberg Humán Szakképző Iskola, Szakközépiskola és Gimnázium 2004 - 2010 -iskolapszichológus, angol nyelvi pszichológiatanár, Karinthy Frigyes Kéttannyelvű Gimnázium, International Baccalaureate (IB) Diploma Programme 2004 - 2005 -pszichológiatanár, Alternatív Közgazdasági Gimnázium 2003 - 2005 -angoltanár, Bókay János Humán Kéttannyelvű Gimnázium és Szakközépiskola 2002 -pszichológus-asszisztens, Pszichiátriai Szakkórház, Nagykálló Egyéb szakirányú tapasztalatok: - kortárs-segítő önismereti képzés, 2 év - szociodráma és pszichodráma sajátélmény, 300 óra - színházi technikák, playback (rögtönzés) alapképzés - drogprevenciós kortárs-segítő tevékenység a Sziget-en - Transzformáció társasjáték, sajátélmény és játékvezetés - önismereti csoportok vezetése serdülőknek - transzperszonális workshop (TPW I-IV) - születéstréning - autogén tréning - alternatív nyelvtanítási technikák (International Language School tanárképzés) - transztechnikák (izzasztókunyhó, transzlégzés) - OH-kártya tanfolyam Speciális érdeklődés: -valláspszichológia, transzperszonális pszichológia, alternatív tanítási módszerek, képzőművészet, írás\nÁr: érdeklődjön telefonon", miben:"", img:"https://a-hely.com/images/barcs.jpg", prio:3},
+  {id:26, n:"Kocka Alexandra",                a:"kocka-alexandra",                 r:"Pszichológus",                                                                     s:"Felnőttek, 14-18 évesek",                          g:"no",    t:"pszichologus", bio:"Első diplomám Sopronban szociálpedagógia szakon szereztem. Ezt követően a Szegedi Egyetem pszichológia szakának - iskola- és tanácsadás szakirány - elvégzése után az ELTE-n  szexuálpszichológiai  szakpszichológusi diplomát szereztem.\nSzociálpedagógusként, majd pszichológusként a gyermekvédelmi rendszerben töltött 8 év munka során elsősorban fiatal felnőttekkel, kamaszokkal és szüleikkel kerültem kapcsolatba. Fő feladataim közé tartozott a gyermeknevelési tanácsadás, a fiatalok és szüleik támogatása, megerősítése, valamint a konfliktusok rendezésének segítése, a kommunikáció javítása. Pályám során segítőként foglalkoztam pszichiátriai betegséggel küzdőkkel, valamint szenvedélybetegekkel.\nÚgy gondolom, hogy a pszichológus csupán kísérő, aki támogató jelenlétével a hozzá segítségért fordulóval tart, élete egy nehéz szakaszán.\nKeressen bizalommal, ha\n• megerősítésre vágyik\n• bizonytalan és keresi a megoldást\n• változást szeretne életminőségében\nÁr: érdeklődjön telefonon\nEmail: kocka.alexandra@gmail.com", miben:"• Önértékelési gondok\n• Szorongásos tünetek és hangulati problémák\n• Életvezetési problémák\n• Krízishelyzet\n• Kapcsolati konfliktus\n• Pályaorientációs nehézség\n• Kommunikációs zavar\n• Szexuális problémák\n• Gyermekvállalással, terhességgel kapcsolatos nehézségek\n• Gyermeknevelési kérdések\n• kamaszkori konfliktusok\n• magatartási és beilleszkedési problémák\n• jelentős viselkedésbeli vagy hangulati változások\n• teljesítményromlás az iskolában\n• iskolai hiányzások\n• önállósodási, leválási nehézségek, szülőkkel való konfliktusok\n• intimitással kapcsolatos kérdések, nehézségek", img:"https://a-hely.com/images/kockaalexandra.jpg", prio:3},
+  {id:27, n:"Szilágyi Gabriella",             a:"szilagyi-gabriella",              r:"Tanácsadó szakpszichológus",                                                       s:"Felnőttek, 14-18 évesek",                            g:"no",    t:"pszichologus", bio:"Pszichológus diplomámat az ELTE-n szereztem Életvezetés és tanácsadás illetve Egészségpszichológia szakirányokon, majd ugyanitt folytattam tanulmányaimat Tanácsadó szakpszichológus képzésen. Igyekeztem az egyetem alatt is gyakorlatra szert tenni, képződtem és önkénteskedtem kortárs segítés (pl. iskolai drogprevenciós csoport-foglalkozások) továbbá krónikus beteg gyermekek élményterápiás táboroztatása és a tábori önkéntesek képzése, koordinálása területein. Ezután óvoda- és iskolapszichológusként dolgoztam 5 évig. Két kislányom születését követően elsősorban egy fejlesztő- és terápiás központban kezdtem el újra dolgozni, dinamikus szenzoros integrációs terápiás szemléletben óvodás korú gyerekekkel. Emellett kamaszokkal és felnőttekkel is foglalkozom pszichológiai tanácsadás keretei között. Egy ideje már tudatosan igyekszem olyan megközelítésekkel, módszerekkel ismerkedni, melyek a testi szintet is bevonják önmagunk megértésének folyamatába. Az emlékek nem csak az elménkben raktározódnak el, hanem a testünkben is, így a fizikai-lelki egészség megőrzéséhez, valódi önmagunk megtapasztalásához, személyes fejlődésünkhöz szükséges, hogy a testünk bölcsességét is segítségül hívjuk. Ezt folyamatosan tapasztalom a saját életemben is. Pszichológusként igyekszem olyan légkört biztosítani, melyben a hozzám fordulók megélhetik az elfogadást és rátalálhatnak saját útjukra, megoldásaikra. Ennek a folyamatnak  kísérésében segítenek a következő módszerek, melyeket elsajátítottam: autogén tréning, fókuszolás, gyermekdráma, gyermek-, serdülőkor- és várandósok relaxációja, dinamikus szenzoros integrációs terápia.\nAmit kínálok:\n- egyéni tanácsadás kamaszoknak és felnőtteknek\n- egyéni tanácsadás várandósoknak\n- autogén tréning relaxáció-, illetve fókuszolás módszer-tanulási lehetőség\nAmiben segíteni tudok:\n- életvezetési problémák\n- önismeret\n- várandósság során felmerülő nehézségek\nÁr: 17 000 Ft, 50p\nEmail: s.szilagyi.gabriella@gmail.com\nFacebook: @SzilagyiGabiPszichologus facebook oldal", miben:"", img:"https://a-hely.com/images/szilagyi%20gabi.jpg", prio:3},
+  {id:28, n:"Szász Linda",                    a:"szasz-linda",                     r:"Pszichológus, Ultrarövid terápiás konzulens",                                      s:"Felnőttek",                                          g:"no",    t:"pszichologus", bio:"Személyes hitvallásomként megfogalmaztam, abban támogatok másokat, hogy kiegyensúlyozódjanak és megleljék önnön egészségüket, teljességüket, nagyságukat.\nTörekszem erre anyaként, barátként, társként, végső soron életem minden területén.\nPszichológusi hivatásomban az Ultrarövid Terápia® módszere hozta el számomra e szándék beteljesítésének legszebb és legillőbb mikéntjét.\nAz Ultrarövid Terápia® egy – Dr. Buda László által kifejlesztett – intenzív egyéni konzultációs módszer, melynek legfőbb jellemzői a gyorsaság, a mélység és a hatékonyság. Rövid időkeretben, a lényegre fókuszálva igyekszünk jelentős      felismerésekig jutni, érdemi döntéseket hozni és konkrét lépéseket tenni a vágyott változás felé.  Bővebben:  https://ultrarovidterapia.hu/bovebben-az-ultrarovid-terapiarol/\nAmikor anno pszichológia szakra jártam az egyetemen, vágytam egy megbízható és megtartó keretrendszerre és módszerre:\n• amivel az emberi lélekhez kellő alázattal és tisztelettel, ugyanakkor biztos kézzel nyúlhatok\n• ami egyúttal engem is megmunkál és inspirál\n• amit letisztultnak, emberinek és hatékonynak tartok\n• amivel azonosulni tudok.\nEgyfajta Szent Grálról álmodoztam, s végül, nagy örömömre, Dr. Buda Lászlónál meg is találtam: számomra ez az Ultrarövid Terápia®.\nÚjra és újra elámulok az általa bejárható belső út hatásán, katartikus változáskatalizátornak tartom.\nÖsszességében 3 nagy kategória mentén lehet számodra érdekes:\n• „egy konkrét élethelyzet túlnő rajtam, elakadtam”\n• „jelez a testem valamilyen tünet-betegség formájában”\n• „valami nem az igazi, lehetnék boldogabb”\nA módszer személyesen és online formában is hatékonyan működik, ebben a két videóban Dr. Buda László röviden összefoglalja, hogyan tudod elképzelni.\nAz Ultrarövid terápiás konzultáció menetének rövid bemutatása\nhttps://vimeo.com/682177725\nOnline UT konzultáció – felkészülés otthon\n  https://vimeo.com/772597677/c9d8aaf779\nHozzásegít ahhoz, hogy egy tágasabb, tisztább, kiegyensúlyozottabb, egészségesebb belső teret hozz létre önmagadban, amibe újat, frisset, örömtelit, ön-azonosat teremthetsz.\nSzinte tapintható, ahogy kikönnyít és felszabadít, megtisztít és átalakít, öngyógyító folyamatokat indít.\nNulladik kilométerkő, ha az önismeretet most kezdted és jelentős mérföldkő, ha járod már egy ideje.\nÖrömmel kísérlek ebben az élményben, ha úgy döntenél, hogy szívesen és velem.\nHogy megteszed magadért.\nKöszönöm megtisztelő figyelmed, szeretettel,\nÁr: érdeklődjön telefonon\nEmail: megteszem.magamert@gmail.com", miben:"", img:"https://a-hely.com/images/szasz%20linda1.jpg", prio:3},
+  {id:29, n:"Grózner István",                 a:"grozner-istvan",                  r:"Pszichológus",                                                                     s:"Felnőttek",                                          g:"ferfi", t:"pszichologus", bio:"Grózner István vagyok, okleveles pszichológus. Diplomámat a Károli Gáspár Református Egyetemen klinikai- és egészségpszichológia szakirányon szereztem. Az egyetemi évek alatt kortárs segítőként dolgoztam, ahol számos hallgatónak nyújtottam lelki támogatást és szereztem tapasztalatot olyan témakörökben, mint párkapcsolati problémák, stressz- és szorongásoldás, beilleszkedési nehézségek, és életvezetéssel kapcsolatos elakadások. Fontos számomra a szakmai fejlődés, új szemléletek, új eszközök, technikák megismerése, hisz ezek által is jobban tudom a hozzám fordulókat segíteni. Jelenleg ezért is képződök az Individuálpszichológiai Egyesületnél és mellette szabadidőmben is szeretek új ismereteket gyűjteni olyan neves szerzők könyveinek olvasásával vagy előadásainak hallgatásával, mint Irvin Yalom, Feldmár András vagy Popper Péter.\n    Munkámban a személyközpontú szemlélet dominál, ami azt takarja, hogy hiszem, hogy mindenkiben ott van a megoldás a problémáira, a válasz a kérdéseire, az én feladatom az, hogy a megfelelő eszközökkel segítsem azt megtalálni. Fontosnak tartom a kliens-terapeuta kapcsolatát is, melyet az empátia, az elfogadás és az őszinteség jellemez. Közös munkánk során erre építve, együtt keressük a kiegyensúlyozottabb jövő felé vezető utat.  \nÁr: 18 000Ft, 50 perc\nEmail:   gistvan.therapy@gmail.com\nBővebben rólam:\nWeb: https://www.gistvantherapy.hu", miben:"- Életvezetéssel kapcsolatos elakadások\n- Párkapcsolati kérdések (párkeresés, párkapcsolati konfliktus, szakítás)\n- Önértékelési problémák\n- Önismereti kérdések\n- Szorongásoldás/stresszkezelés\n- Hangulatingadozás\n- Kommunikációs problémák (érzések, igények, szükségletek kifejezése, konfliktus kezelés)\n- Gyásztanácsadás", img:"https://a-hely.com/images/grozner.jpg", prio:3},
+  {id:33, n:"Pálos Krisztina",                a:"palos-krisztina",                 r:"Klinikai és mentálhigiéniai felnőtt szakpszichológus",                             s:"Felnőttek",                                          g:"no",    t:"klinikai", bio:"Pálos Krisztina  klinikai és mentálhigiéniai felnőtt szakpszichológus vagyok. Egyetemi szintű pszichológusi diplomámat 2004 - ben szereztem a Pécsi Tudományegyetemen, majd ugyanitt 2008 - ban végeztem klinikai szakpszichológusként. Életem korábbi szakaszában pedagógiát tanultam.  Foglalkoztam fogyatékos gyermekek korai fejlesztésével, családjaik lelki támogatásával, gyermekvédelemmel, beszédfogyatékos gyerekek diagnosztikájával. Dolgoztam hajléktalan ellátásban, középiskolai kollégiumokban, kórházi osztályokon (pszichiátriai - , mozgásszervi rehabilitáció)   \nIgyekszem folyamatosan bővíteni szakmai ismereteimet, melyet persze remekül kiegészítenek saját életem tapasztalatai, küzdelmei is. Képződtem relaxációs, álomértelmezési technikák, pszichodráma, Gordon - féle kommunikáció, mediáció terén. Módszerspecifikus képzéseken is folyamatosan részt vettem/ veszek: KIP, sématerápia, család - rendszer terápiás képzések keretén belül.  \n  Alapvetően egyfajta elemző - értelmező, vagyis  analitikus  szemléletben szeretek megközelíteni minden problémát.  Nem diagnózisokban, nem tünettanban, hanem jelenségekben gondolkodok.  A “ tünet re”, mint  “üzenethordozóra”  tekintek, melynek mögöttes tartalma megfejtésre, feltárásra vár. Felfedezni, mi az üzenet valódi tartalma, mi a funkciója jelen életemben, kapcsolataimban, illetve múltamban honnan ered.  (pl.  Mitől is szorongok? Miért is van mindig rossz kedvem? Hol akadt el az életem, miért nem tudok tovább haladni?  És sorolhatnánk....)  \nEbben a kontextusban  terápiás módszerem alapját  a  verbális kommunikáción  alapuló  feltáró beszélgetések  adják. Ezek során a jelenben problémát okozó elakadásokat, nem megfelelő (maladaptív) megküzdési módokat, túlzott érzelmi - gondolati reakciókat, - korunk gyakran használt kifejezésével élve a “sémákat” igyekszünk feltárni, értelmezni.   \nAz ismerkedés fázisában az ún.  elsőinterjú  keretében körvonalazzuk terápiás céljainkat. A múlt “megidézéséhez” sor kerül az  egyéni élettörténet , majd a  családfa  megbeszélésére, melyeken keresztül a fontosabb “témák”, terápiás fókuszok elkezdenek kirajzolódni.  Remek technikai elemnek tekintem és használom klienseim belső képi világát (katathym képélmények) is a terápiás folyamatban, melyhez  relaxált állapotban megidézhető képeiket ,  valamint a beszélgetések során spontán megjelenő  álmaikat  hívjuk segítségül.  \nAz  egyént egy családfa leszármazottjá nak tekintem, aki hordozza felmenői érzelmi - gondolati – kapcsolati mintáinak lenyomatát is. A transz-generációs minták feltárásában - fókuszt helyezünk a családi örökségekhez, ősökhöz fűződő  “lojalitásra” , az ebből fakadó belső konfliktusokra (pl. Amikor tudatosul valakiben: vajon  “Miért is az anyám, nagyanyám, dédanyám stb. életét élem...?” ) Vagy a “destruktív sémák” feltárásán keresztül próbáljuk megérteni és oldani a “ destruktív jogosultságok ”  (pl. “Nekem csak ez jutott”, vagy “Sosem lehetek boldog, sikeres” stb.  gondolatok ),  terhét is.   \nTerápiás munkám során kiemelt figyelmet fordítok arra is, hogy a múltból felsejlő elakadások ne csak gondolati síkon, de érzelmileg is átdolgozhatóvá váljanak, hiszen érdemleges fejlődés, változás csak így érhető el.  \nTalán a fenti gondolatok is mutatják:  tanulmányaim és tapasztalataim során, - beleértve a már professzionális klinikusi pszichológusi munkát is, egyre inkább a különféle segítő attitűdök, terápiás technikák, módszerek ötvözése vált kiemelt érdeklődési területemmé.  Holisztikus szemléletemben  jól megférnek egymás mellett, egymást kiegészítve a dinamikus - analitikus, a kognitív, a relaxációs, imaginációs, álomértelmezési technikák, a családterápiás ismeretanyagok sokszínűsége. Napi szinten tapasztalom azt is, hogy generációkon átívelő  családi örökségeink  lenyomata valóban lépten-nyomon előkerül egy - egy beszélgetés - sorozat során. Ezek beemelése, értelmezése szintén meghatározó részét képez(het)i a terápiás folyamatnak, hiszen felmenőink élete (sokszor tudattalanul) bennünket is determinál(hat).     \nFontos nak gondolom,  hogy az ember értse önmagát,  tudjon kapcsolódni, - és jól kapcsolódni belső világához, érzéseihez, impulzusaihoz, gondolataihoz. Ekkor válik képessé arra, hogy a másik emberhez is \"elég jól\" tudjon kapcsolódni, viszonyulni. Félelmeink, szorongásaink legtöbbször ennek hiánya mentén alakulnak ki és kezdik uralni mindennapjainkat, életünket. És adott esetben komolyabb mentális problémák (hogy csak a leggyakoribbakat említsem: pánik-szindróma, hangulatzavar, pszichoszomatikus zavarok vagy egyéb szorongások,) kialakulásához is vezethet.    \nHiszem, hogy mindaz,  ami a fejlődéshez szükséges, eleve adott az emberben,  hogy nehézségeink megoldásának kulcsa mindig önmagunkban van, s hogy a fejlődés, gyógyulás legfőbb komponensét kapcsolataink adják.  \nA terápiás folyamat menetében - éppen ezért - mindvégig  a kapcsolatra építek , - elsősorban emberként igyekszem jelen lenni, s csak másodsorban, mint pszichológus. Kiemelt szerepet tulajdonítok annak, hogy a hozzám fordulók a szeretet és elfogadás, vagyis egy empatikus, biztonságot adó légkörben átélhessék: mindannyian jogosultak vagyunk egy emberhez méltó, élhető életre. Szeretem a  humor t, melyet  csodás túlélő csomag nak tekintek, s amely a terápiás folyamatban sokszor jelzi, hogy jó irányba megyünk, már van erő a mindennapokhoz, a jókedvhez is.   \n    Úgy vélem, nincs olyan személyiség, élethelyzet, krízis, mely eleve kizárná a továbblépés, a fejlődés lehetőségét. Éppen ezért érdemes  az önismereti munkáról/ pszichoterápiáról mint egyfajta \"életadta\" esélyről gondolkodni,  mely a személyiség magasabb szintű összhangját célozza. Áthangolja, erősíti nehézségekkel való megküzdési készségeinket, ezáltal bennünk szunnyadó erőket mozgósít, és a mindennapokat is élhetőbbé teheti.  \nBármerre is sodor az élet, mindig megérint a nehézségeivel küzdő, szenvedő ember, mindenkor megindító és egyben felemelő érzés számomra látni és megtapasztalni a krízisekből kibontakozó fejlődést, s átélni, hogy sokszor semmi másra nincs szükség: egyszerűen csak jelen lenni.  Igyekszem minden helyzetből magam is tanulni, hálás vagyok mindenkinek, aki beengedett / beenged egy időre az életébe, s hiszem, hogy találkozásaink gazdagabbá tesznek.  \nHa szeretne bővebb képet kapni rólam, szeretettel ajánlom figyelmébe honlapom megtekintését, melyben személyemről, emberi és szakmai hitvallásomról, múltamról átfogóbb képet kaphat.  \nKöszönöm, hogy elolvasta soraimat.  \nÁr: Telefonos egyeztetés alapján", miben:"Mindazok megkereshetnek, akik:  \n- önbizalomhiánnyal, önértékelési problémákkal  küzdenek, vagy pusztán  önismereti igény ből keresnek segítséget, \n- akut élethelyzeti, vagy kapcsolati  krízis - helyzetben  érzik magukat, vagy valamilyen  veszteséggel  (kapcsolati, munkahely, trauma, gyászfeldolgozás stb.) kell megküzdeniük, \n- pánikzavar, fóbia, vagy egyéb  szorongásos zavarok  jeleit – vagy ahogy sokan megfogalmazzák „pszichés” tüneteket észlelnek magukon, \n-  depresszióra,  vagy  egyéb , a  hangulati élet zavarára  utaló jeleket, \n- vagy olyan testi (szomatikus) tüneteket tapasztalnak, melyek hátterében nem (feltétlenül) mutatható ki szervi elváltozás – vagyis  pszichoszomatikus zavarok  esetén (pl. fejfájás, gyomor – bélrendszeri bántalmak, izületi fájdalmak, stb.), \n- illetve már meglévő  szomatikus (testi) betegségükkel  nehezen tudnak együtt élni, megküzdeni, \n-  elalvási és/vagy átalvási zavar kapcsán a következőket tapasztalják:  pl. gyakori felébredések, nehéz gondolatok elalvás helyett, rémálmok, az alvás nem pihentető, fáradtabban ébred, mint ahogy lefeküdt \n-  addiktológiai problémával ( alkoholabuzus, gyógyszer- vagy játékfüggőség) küzdenek, \n-  párkapcsolati, szexuális, családi kapcsolati zavarok , nehézségek esetén, \n- akik  nehezen boldogulnak a konfliktushelyzetekkel , vagy úgy érzik, nincs meg a megfelelő védelmi rendszerük, megküzdési repertoárjuk, stratégiáik kapcsolati helyzetek értelmezéséhez, kezeléséhez, \n- akiknek  nehézséget okoz a   stressz-helyzetek  tűrése, feloldása, nem találnak megfelelő0 „szelepet” ahhoz, hogy a munkahelyi, kapcsolati vagy egyéb helyzetekben felhalmozódott feszültséget levezessék, \n- a  gyermekvállalás, gyermeknevelés  területén érzik elakadva magukat, akár a terhesség, szülés, gyermeknevelés mindennapos kihívásai, vagy éppen egy kamasz gyerek leválása jelent megpróbáltatást,", img:"https://a-hely.com/images/palos.jpg", prio:3},
+  {id:34, n:"Papp Szilvia",                   a:"klinikai-szakpszichologus",       r:"Klinikai szakpszichológus",                                                        s:"Felnőttek, 3-6 évesek, 7-18 évesek",                g:"no",    t:"klinikai", bio:"2003-ban szereztem a diplomámat a debreceni egyetemen, majd 2008-ban az ELTE-n, felnőtt klinikai szakpszichológus képesítést szereztem. 2015ig felnőtt pszichiátriai osztályon dolgoztam krízisben lévő személyekkel. Gyermekeim születése a szakmai életemben is nagy változást hozott. Az otthon töltött évek után pedagógiai szakszolgálatnál helyezkedtem el és ott dolgozom jelenleg is. Itt 2 éves kortól 21 éves korig fordulhatnak hozzánk a szülők és a gyermekek.  Az elmúlt években több irányban képződtem (relaxáció, szenzoros integrációs terápia, autizmus)\nA gyerekekkel való munkában elsődlegesnek tartom az elfogadó, biztonságot nyújtó kapcsolat kiépítését. Ha a problémát a gyermek helyzetén keresztül tudjuk látni, akkor van lehetőségünk a változás útját meglátni, elősegíteni.", miben:"Gyermekekkel kapcsolatban a következő problémák esetén tudok segíteni:\n• Iskolai, óvodai problémák, beilleszkedési nehézségek \n• Kortárs kapcsolatokkal összefüggő problémák\n• Visszahúzódó, gátlásos magatartás, szelektív mutizmus esetén\n• Serdülők nehézségeinek kezelésében\n• Erős szorongásos tünetek esetén\n• Viselkedésváltozás, indulatkezelési nehézségek\n• Családi változásoknál pl válás, haláleset, testvér születése\n• Iskolaérettség kérdésében\n• Eltérő fejlődés gyanúja esetén\n• Szülőkonzultáció nevelési elakadások, konfliktusok kapcsán\nA gyermekek esetében először mindig a szülővel találkozom, aminek a célja a probléma részletes átbeszélése, a gyermek eddigi fejlődésének a megismerése. Ezután történik a gyermekkel való találkozás, melynek során beszélgetés, közös játék, rajz, esetleg különböző tesztek, vizsgáló eljárások segítségével történik a probléma jellegének, a gyermek személyiségének a megismerése.   \nEgy következő szülőkonzultáció során megfogalmazódnak a terápiás célok és keretek.\nFelnőttek esetében támogatást tudok nyújtani:\n• életvezetési problémák esetén\n• önértékelési gondok esetén\n• párkapcsolati nehézség esetén\n• krízishelyzetből való továbblépésben,\n• túlzott stressz és következményeinek kezelésében,\n• az önismeret mélyítésében.\n• Szülői szereppel kapcsolatos nehézségek", img:"https://a-hely.com/images/Papp%20szilvi.jpg", prio:3},
+  {id:37, n:"Veress-Pajti Dóra",              a:"veress-pajti-dora",               r:"Pár- és családterapeuta, Mentálhigiénés segítő, Gyászfeldolgozás módszerspecialista", s:"Felnőttek, Család és párterápia",               g:"no",    t:"pszichologus", bio:"Diplomás ápolóként kezdtem munkásságomat, daganatos beteg gye­re­kek á­po­lá­sá­val foglalkoztam, amely közben óriási hiányát éreztem a betegek és hoz­zá­tar­to­zó­ik lelki egészségvédelmének. A klinikai éveimben elindultam az önismereti úton, amely mind a mai napig tart.\n2012-ben férjhez mentem és két kisfiú é­des­any­ja lettem, ami egy darabig megszakította mun­kás­sá­gom és helyette a családi sze­rep­kö­re­im­ben erősödtem és az is komoly változáson, önismereti munkán vitt át.\nMajd 2016-ban úgy döntöttem, hogy tovább képzem ma­gam a mentálhigiéné irányába, hogy még komplexebb módon tudjak segíteni.\nSaját életemben is megtapasztaltam, hogy az önismeret, a gyógyító figyelem, a ma­gunk­ra figyelés mennyi katarzist, feloldást hoz. Én is megküzdöttem, feldolgoztam, meggyászoltam sok veszteségemet eddigi életem folyamán, mely hozzásegített a hiteles jelenléthez a segítő kapcsolatban.\nHiszek abban, hogy mindannyian mások va­gyunk, más­képp küz­dünk meg ter­he­ink­kel, de min­dannyi­unk­ban ott az erő és a lehetőség a ne­héz­sé­geink le­győ­zésére és a fejlődésre.\nA sorsunkért mi magunk va­gyunk felelősek, amely hiszem, hogy for­mál­ha­tó és meg­vál­toz­tat­ható.\nVégzettségeim\nÉrzelmi Fókuszú Párterápiás Alapképzés (2021)\nGyászfeldolgozó Módszertan Specialista Képzés (2021)\nGordon TA Coach Képző Akadémia (2021)\nMagyar Pszichodráma Egyesület  (2017-  )\nSZTE-BTK integratív mentálhigiéné (2017 - 2019)\nSZTE-ETSZK diplomás ápoló (2006 - 2010)\nÁr: érdeklődjön telefonon\nEmail: pajtidora@gmail.com\nWeb: https://www.pajtidora.hu", miben:"• Döntési nehézségben\n• Élethelyzeti és munkahelyi elakadásokban\n• Családi és párkapcsolati problémák kezelésében\n• Önbizalom erősítésében, önérvényesítésben\n• Önismereti fejlődésben\n• Érzések megélésének elősegítésében\n• Krízishelyzetek kezelésében\n• Gyászfeldolgozásban, veszteségfeldolgozásban \n• Haláleset\n• Szeretett személy elvesztése\n• Szakítás, válás\n• Súlyos betegség esetén hozzátartozók, betegek kísérése\n• Munkahely elvesztése, költözés\n• Egy be nem teljesült vágy/ álom feldolgozása", img:"https://a-hely.com/images/vpdori.jpg", prio:3},
+  {id:39, n:"Czimmerman Edit",                a:"czimmerman-edit",                 r:"Gyermek- és ifjúsági klinikai szakpszichológus",                                   s:"0-3 évesek, 3-6 évesek, 7-18 évesek, 14-18 évesek", g:"no",    t:"klinikai", bio:"Pszichológusi tanulmányaimat a Debreceni Egyetemen kezdtem, később a DEOEC klinikai és mentálhigiéniai gyermek- és ifjúsági szakpszichológus képzésén folytattam. Módszertani irányultságomban az integratív és a családterápiás szemlélet a meghatározó.\nTizedik éve foglalkozom gyermekekkel; 4 évig nevelési tanácsadóban illetve iskolában nyújtottam segítséget gyermekeknek és szüleiknek pszichés problémák megoldásában; jelenleg pedig magánrendelésen és óvodapszichológusként dolgozom a kerület 4 óvodájában. Szeretem a kihívásokat, megszerzett tudásomat igyekszem több területen is kamatoztatni. Az elmúlt évek alatt az áldozatsegítés, a pár-és családterápia területén is tapasztalatokat szereztem.\nÁr: telefonos egyeztetés alapján", miben:"• Szomatikus tünetek: bepisilés, bekakilás, has-, fejfájás\n• Szélsőséges viselkedések (hiszti, agresszió, beilleszkedési nehézségek, „hazudozás”)\n• Alvási nehézségek (elalvási nehézségek, éjszakai felriadás)\n• Szorongás, visszahúzódó, gátlásos magatartás\n• Túlmozgékonyság, figyelmetlenség\n• Teljesítményproblémák, tanulási nehézségek, teljesítményszorongás\n• Magatartásproblémák\n• Testvérféltékenység\n• Viselkedési tünetek: pl. rángások az arcizmokon, körömrágás\n• Traumatikus élmény feldolgozása (baleset, haláleset a családban, válás, iskolaváltás)\n• Serdülőkori problémák\n• Szülőkonzultáció, tanácsadás nevelési helyzetek kezelésére vonatkozóan", img:"https://a-hely.com/images/czimmermann.jpg", prio:3},
+  {id:40, n:"Császár Imola",                  a:"csaszar-imola",                   r:"Pedagógiai Szakpszichológus, Csecsemő-Szülő kapcsolati konzulens",                 s:"0-3 évesek, 3-6 évesek, 7-18 évesek",               g:"no",    t:"pszichologus", bio:"Tanulmányaimat a Kolozsvári Babes-Bolyai Tudományegyetemen kezdtem, ahol a pszichológus és pszichológus szakos tanár diploma megszerzése után, az ELTE-n pedagógiai szakpszichológusi szakvizsgát tettem. A Pázmány Péter Katolikus Egyetemen csecsemő-szülő kapcsolatdiagnosztika és konzultáció szakirányon is szakképzettséget szereztem.\nAz elmúlt évek során több módszerspecifikus továbbképzést elvégeztem: NLP tanfolyam, Relaxáció és szimbólumterápia, Szociometria, Gordon-féle Tanulási eredményesség tréning, Négyüléses serdülő konzultáció, SzPT, Solution Focus tréning, Gyerekpszichoterápia technikai kérdései az életkori sajátosságok tükrében.\n Több mint 20 éve aktívan a pályán, mindig igyekeztem tanulni, fejlődni, tudásomat, tapasztalataimat a gyakorlatban kamatoztatni. Az elmúlt évek alatt több helyszínen (korai fejlesztőben, óvodában, iskolában, nevelési tanácsadóban, magán pszichológiai rendelőben) volt alkalmam dolgozni, különböző korosztállyal. Tapasztalataim alapján a gyermekek fejlődése során, bármelyik életkorban előfordulhatnak kisebb-nagyobb problémák, kihívások, nehézségek, elakadások.\nA közös munka során, abban tudok segíteni, hogy megtaláljuk azokat a válaszokat, lehetőségeket, amelyek aktuálisan a megoldáshoz, tovább lépéshez szükségesek a gyermeknek, szülőnek, családnak. Fontos, hogy odafigyeljünk és észleljük már a korai figyelmeztető jeleket is, hogy időben és hatékonyan megelőzhessük a nagyobb problémák kialakulását.\nSzemléletmódom vezérelve a szülő- gyermek kapcsolat minőségének segítése illetve tünetek mögött húzódó kapcsolati problémák feltérképezése. A családi környezet nagy jelentőséggel bír a gyermek egészséges személyiségfejlődésében.\n Speciális érdeklődési területem a koragyermekkori regulációs zavarok felismerése és kezelése. A szülő-csecsemő/kisgyermek konzultáció során a 3-48 hónapos gyermek viselkedésének megértésében segíthetek a szülőknek a táplálás, alvás, sírás, megnyugtatás, az együttműködés és viselkedésszabályozás terén.\nA gyermekpszichológiai tanácsadás során első alkalommal szülő interjú keretében kerül sor a gyermeket/családot érintő nehézség részletes átbeszélésére és anamnézis felvételre. Ezután négy-öt alkalommal találkozom a gyermekkel, állapotfelmérés céljából, amit majd egy újabb szülőkonzultáció követ.\nÁr: 18 000Ft, 50 perc\nEmail: csaszarila@gmail.com", miben:"• Gyermeknevelési kérdések\n• Szülő-gyermek kapcsolati elakadás\n• Beilleszkedési, magatartási problémák, szorongás\n• Pszichés eredetű testi tűnetek (fejfájás, hasfájás stb)\n• Tanulási nehézségek, alulmotiváltság, teljesítményszorongás\n• Serdülőkori problémák\n• Iskolaérettség felmérése\n• Képességfelmérés", img:"https://a-hely.com/images/csaszar%20imola.jpg", prio:3},
+  {id:41, n:"Lőrincz Noémi",                  a:"lorincz-noemi",                   r:"Tanácsadó szakpszichológus",                                                       s:"Felnőttek, 7-18 évesek",                             g:"no",    t:"pszichologus", bio:"Tanulmányi utamat a kolozsvári Babes-Bolyai Tudomány Egyetemen kezdtem, ahol iskolapszichológia szakirányon végeztem, majd Budapesten szereztem tanácsadó szakpszichológusi diplomát pár- és családterápia szakirányon.\n Iskolapszichológusként helyezkedtem el Budapesten, öt évig dolgoztam általános iskolás illetve gimnáziumi tanulókkal, szüleikkel és pedagógusaikkal.\nMunkám során egyéni és csoportos foglalkozásokat tartottam gyerekeknek konfliktuskezelés, szociális készségfejlesztés, krízistanácsadás, szorongásoldás és pályaedukáció témakörében, a szülőknek és pedagógusoknak szintén egyéni és csoportos foglalkozásokat tartottam nevelési tanácsadás, pszichoedukáció illetve krízistanácsadás témában.\nJelenleg egy másfél éves kislány anyukája vagyok, aki napi szinten tanít a türelem, empátia és értő figyelem fontosságára a bizalmi kapcsolatban.\nMunkám alapját képezi a rendszerszemlélet, hiszem, hogy a problémákat érdemes az egyént körülvevő kapcsolatrendszereken keresztül vizsgálni.\nProblémafókusz helyett  az erőforrások kiaknázására igyekszem hangsúlyt fektetni, empatikus és elfogadó légkörben, értő figyelemmel  kísérem  a hozzám fordulókat önismereti munkájuk során.\nÁr: érdeklődjön telefonon\nEmail: nlorincz26@gmail.com", miben:"Gyerekek esetében:\n• Iskolai nehézségek (beilleszkedési nehézség ,teljesítményromlás, szorongás, szülőktől való elválás nehézsége, pályaválasztási nehézségek, tanulási nehézségek)\n• Önértékelési nehézségek\n• Tanulásmódszertani kérdések\nSzülők esetében:\n• Nevelési tanácsadás\nDiákok esetében:\n• Önismeret\n• Pályaválasztási tanácsadás\n• Felnőttekkel való konfliktusok\n• Tanulásmódszertan", img:"https://a-hely.com/images/lorincn.jpg", prio:3},
+  {id:42, n:"Gachályi Örsné Németh Viktória", a:"gachalyi-oersne-nemeth-viktoria", r:"Gyermek- és ifjúsági klinikai szakpszichológus, szülő-csecsemő/kisgyermek konzulens", s:"0-3 évesek, 3-6 évesek, 7-18 évesek, 14-18 évesek", g:"no", t:"klinikai", bio:"1998-ban végeztem az ELTE pszichológia szakán, Klinikai és Mentálhigiéniai Gyermek-és Ifjúsági Szakpszichológus címemet 2000-ben szereztem meg.\nPszichológusi munkámat a gyermekvédelem területén kezdtem. Gyermekotthonban élő gyermekekkel való munkám a kezdetektől meghatározta és formálta segítő attitűdömet, a kapcsolati szemléletben való gondolkodásom fontosságát.    \nSzakmai tapasztalataimat a továbbiakban pedagógiai szakszolgálatban szereztem. Mind a mai napig szülőkonzultációt, nevelési tanácsadást folytatok, diagnosztikai és terápiás munkát végzek. Tagja vagyok az intézmény korai fejlesztő munkacsoportjának, ahol a korai intervenció pszichológiai feladatait látom el (diagnosztikai munka, szülői támogatás, konzultáció, veszteségfeldolgozás).\nIntegratív szemléletben gondolkodom és dolgozom. Elvégeztem az individuálpszichológiai alapterápiás képzést, képződtem bábterápiában, játékterápiában, egyéni és csoportos kognitív- viselkedésterápiás technikákban. Gyakorlati tapasztalatokat szereztem a játékdráma területén, hosszú évek óta veszek részt pszichodráma csoportok tartásában.  Eltérő fejlődésű gyermekeket nevelő családokkal végzett munkám során elmélyültem és tanfolyami továbbképzéseken vettem részt a veszteségfeldolgozás, és a pre és perinatális gyászfeldolgozás területein.\n2024 januárjában szereztem diplomát az ELTE integrált szülő-csecsemő konzultáció szakirányú képzési szakán.\nCsecsemőkortól serdülőkorig átívelően folytatok szülőkonzultációt, pszichológiai tanácsadást és terápiás tevékenységet. \n1 alkalom: 50 perc, 16000 Ft", miben:"Segítő munkám többek között a következő területekre terjed ki:\n• veszteségfeldolgozás,\n• nevelési kérdések,\n• koragyermekkori szabályozási zavarok (excesszív sírás, krónikus nyugtalanság, alvásproblémák, táplálkozási-gyarapodási nehézségek),\n• szülő-gyermek kapcsolat zavarai, nehézségek, konfliktusok,\n• túlzott dacosság, dühkezelési problémák, szeparációs szorongás,\n• szorongásos zavarok, hangulati nehézségek,\n• alvási-és étkezési problémák,\n• magatartási-és beilleszkedési nehézségek,\n• pszichoszomatikus panaszok (pl.: hasfájás, fejfájás),\n• funkciózavarok (enurezis, székelési problémák),\n• serdülőkori problémák, konfliktusok.", img:"https://a-hely.com/images/nemeth%20viki.jpg", prio:3},
+  {id:43, n:"Sztankó-Deák Réka Andrea",       a:"sztanko-deak-reka-andrea",        r:"Tanácsadó szakpszichológus, komplex integratív gyermekterapeuta, CBT konzulens",  s:"3-6 évesek, 7-18 évesek",                            g:"no",    t:"pszichologus", bio:"Pszichológusi tanulmányaimat az Eötvös Loránd Tudományegyetem Pedagógiai és Pszichológiai Karán, klinikai és egészségpszichológia szakirányon végeztem. Tanácsadó szakpszichológus végzettségemet ugyancsak ezen az egyetemen szereztem meg krízis szakirányon. 2012 óta dolgozom pszichológusként. Kezdetben felnőtteknek tartottam foglalkozásokat, 2014 óta vagyok iskolapszichológus, 2018 óta pedig magánrendelésen egy pszichológusi központban is dolgozom gyermekekkel. Munkám során feladataim közé tartozik a szülőkkel, illetve a pedagógusokkal történő konzultáció, valamint az egyéni- és csoportfoglalkozások, osztályfoglalkozások (pl. konfliktuskezelés, szociális készségfejlesztés, közösségépítés) tartása a gyermekek részére. Egyaránt van tapasztalatom az óvodás, általános- és középiskolai korosztállyal is.\n A munkám mellett folyamatosan különböző módszerspecifikus képzéseken veszek részt annak érdekében, hogy szakmai tudásomat bővítsem, hatékonyabban segíthessek a hozzám forduló klienseknek. Elvégeztem a Kognitív viselkedésterápiás konzultáns képzést, aminek keretében különböző kognitív és viselkedésterápiás módszereket sajátítottam el. Az Autogén Tréning képzés felnőtteknek - külön várandósoknak -, illetve gyermekeknek és serdülőknek szóló típusait is elvégeztem, ezáltal több korosztálynak is tudok segíteni a különböző szorongásos tünetek, stressz okozta hatások, pszichoszomatikus megbetegedések csökkentésében. Művészetterápiás ismereteket is szereztem, melynek révén különböző alkotási módszerekkel, folyamatokkal dolgozom a kliensekkel. Elvégeztem a Komplex Integratív Gyermekterapeuta képzést, amelynek során több különböző módszert, eszközt sajátítottam el, melyeket beépítek a munkámba.\n Hiszek abban, hogy mindenki képes a pozitív irányú változásra, melyhez segítséget nyújtok egy empatikus és elfogadó közeg révén, de magukat a szükséges lépéseket a változás érdekében a kliens fogja megtenni.\n    A gyermekekkel való munka folyamata:\nAz első konzultáció a gyermekkel való találkozás előtt a szülővel/szülőkkel történik, melynek során átbeszéljük a fennálló nehézségeket, problémákat, a lehetséges okokat. Ezt követően 4-5 alkalom során egy diagnosztikus folyamatra kerül sor, mely alatt körbejárjuk a gyermekkel az adott problémát, nehézséget beszélgetés, rajz, közös játék, esetleg tesztek révén. Ezt követően ismét egy szülői konzultáció következik, melynek során átbeszéljük a diagnosztikai folyamat eredményeit, az ennek kapcsán felmerülő, megoldási folyamatot elősegítő lehetőségeket. Beszélünk a további konzultációs alkalmakról,  megállapodunk a találkozások gyakoriságában, a körülbelüli alkalomszámban.", miben:"• magatartási, beilleszkedési problémák, kortárs konfliktusok\n• tanulási motivációs nehézségek, teljesítményromlás\n• szorongásos tünetek, hangulati problémák\n• önismereti kérdések\n• önértékelési nehézségek\n• krízisek (pl. válás, haláleset kapcsán gyászfeldolgozás)\n• szülők részére nevelési tanácsadás a nehézségek kapcsán", img:"https://a-hely.com/images/deakreka.jpg", prio:3},
+  {id:44, n:"Szigeti Katalin",                a:"szigeti-katalin",                 r:"Pszichológus, Sport szakpszichológus, Sématerápia Konzultáns jelölt",              s:"Felnőttek, 14-18 évesek",                            g:"no",    t:"pszichologus", bio:"Pszichológusi oklevelet az ELTE BTK Pszichológiai Szakon, a sportszakpszichológusi végzettségemet 2017-ben a Semmelweis Egyetemen szereztem.\nPályám kezdetén óvodában és iskolákban dolgoztam. Az elmúlt 20 évben a különféle módszertanok megismerésével (pszichodráma, NLP, KIP, tranzakcióanalízis, integratív gyerekterápia, sématerápia) igyekeztem szakmai tudásomat bővíteni, önmagamat fejleszteni, hogy minél hatékonyabban tudjam a hozzám fordulókat életútjukon támogatni.\nPszichológusi munkámban elsősorban a mentális egészség elérésében/megőrzésében, a kiegyensúlyozott, elégedett élet megvalósítását segítő eszközök feltárásában igyekszem támogatni a hozzám fordulókat.\nSportpszichológusként célom a sportolók eredményes és sikeres sportolói pályafutásának támogatása, mentális felkészítése a versenyekre, alapvető sportpszichológiai technikák elsajátításában való segítése, sérülések utáni felépülésben való kísérése.\nJelenleg a Magyar Sématerápiás Egyesület sématerápiás képzésén veszek részt.\nMunkámat folyamatos szupervízió mellett végzem.\nÁr: érdeklődjön telefonon\nSzeretettel várom jelentkezését!\nEmail: kataszigeti26@gmail.com", miben:"• célok kitűzése, elérésükben való támogatás\n• életvezetési tanácsadás\n• nehézségek, elakadások esetén megoldásközpontú technikák elsajátítása\n• mentális képességek (koncentráció, kommunikáció, döntéshozatal, stresszkezelés, önbizalom) fejlesztése\n• önismereti kérdések, elakadások\n• stressz és szorongás oldás", img:"https://a-hely.com/images/szigeti%20kata.jpg", prio:3},
+  {id:45, n:"Csáfordi Valentina",             a:"csafordi-valentina",              r:"Pszichológus",                                                                     s:"Felnőttek, 14-18 évesek",                          g:"no",    t:"pszichologus", bio:"Csáfordi Valentina vagyok, okleves pszichológus. Mesterdiplomámat a Pázmány Péter Katolikus Egyetemen szereztem, interperszonális és interkulturális pszichológia specializáción. Jelenleg iskolapszichológusként dolgozom, melynek köszönhetően iskoláskorú gyermekek változatos élethelyzeteivel, problémáival találkozom nap mint nap. Szakmai gyakorlataim során betekintést nyerhettem a családterápia, valamint a logoterápia és az egzisztenciaanalízis alapjaiba. A Napfogyatkozás Egyesület képzéseinek köszönhetően pedig megismerkedhettem a veszteségfeldolgozás összetett érzelmi hátterével is. Pszichológusi munkám során, az eddig megszerzett tudásomat felhasználva szeretnék segíteni mindazoknak, akik keresik megoldásaikat az életükben felmerülő problémákra és szeretnék megismerni belső erőforrásaikat. Egyéni tanácsadás kereteiben vállalok 14 év feletti serdülőket és felnőtteket. Munkámat szupervíziós segítséggel végzem.\nTanulmányok és képzések:\nOH kártya instruktor\nVadaskert Alapítvány:\nÓvodás és kisiskolás korú gyermekek kortárs közösségben tapasztalható magatartásproblémáinak hatékony megoldási stratégiái\nA hiperaktivitás-figyelemzavar viselkedésterápiája\nNapfogyatkozás Egyesület:\nA gyászoló gyermek segítése\nGyászolók segítése és a gyászcsoport vezetése\n2020-2022: Pázmány Péter Katolikus Egyetem, Bölcsészet- és Társadalomtudományi Kar, Pszichológus\n2016-2020: Pécsi Tudományegyetem, Bölcsészettudományi Kar, Viselkedéselemző\nEmail: csafordivalentina.pszi@gmail.com", miben:"Amiben segíteni tudok:\nÖnismereti tanácsadás\nKommunikációs készség-fejlesztés, konfliktuskezelés\nÉletvezetéssel kapcsolatos nehézségek\nNehéz döntési helyzetek segítése\nStresszkezelés\nVeszteségfeldolgozás", img:"https://a-hely.com/images/csafordi.jpg", prio:3},
+  {id:46, n:"Terék Anna",                     a:"terek-anna",                      r:"Tanácsadó szakpszichológus",                                                       s:"Felnőttek, 7-18 évesek",                             g:"no",    t:"pszichologus", bio:"Bemutatkozás:\nKilenc évig dolgoztam a 18. kerületben iskolapszichológusként, a Wesley Kincsei általános iskolában és gimnáziumban, ahol munkám során autizmus spektrum zavarral küzdő, beilleszkedési- tanulási- és magatartási nehézséggel küzdő, valamint sajátos nevelési igényű gyermekekkel és szüleikkel foglalkoztam.\n2012-ben szereztem pszichológus oklevelet az Eötvös Loránd Tudományegyetem Pedagógiai és Pszichológiai Karán, tanácsadás- és iskolapszichológia szakirányon. 2022-ben szereztem tanácsadó szakpszichológusi diplomát, krízis szakirányon, szintén az ELTE-PPK-n.\nMunkám során egyéni- és csoportos ellátást tudok biztosítani gyermekek és felnőttek részére.\nEmail cím: terek.anna.84@gmail.com", miben:"Felnőtteknek:\n• döntéshozatal a karrierről, a munkáról\n• életvezetési problémák\n• érzelmi, indulatkezelési nehézségek\n• iskola-munka-nyugdíj átmeneteinek segítése\n• kapcsolati nehézségek\n• kapcsolatok kialakításának nehézségei\n• konfliktusok kezelése\n• krízistanácsadás (pl. haláleset, válás, stb.)\n• megküzdés a negatív életeseményekkel\n• önismereti kérdések\n• önértékelési nehézségek\n• stressz-kezelés\n• személyes/társas alkalmazkodás nehézségeinek segítése\n• szülők részére nevelési tanácsadás\n• testi fogyatékosság, betegség vagy sérülésekhez való alkalmazkodás segítése\n• váratlan, súlyos élethelyzetekben való támogatás, krízistanácsadás\n• visszatérő kapcsolati nehézségek\nGyermekeknek:\n• agressziókezelés, dührohamok kezelése\n• beilleszkedési nehézségek,\n• érzelmi, indulatkezelési nehézségek\n• kapcsolati-, kommunikációs készségek javítása\n• krízitanácsadás (pl. szülők válása, haláleset, stb.)\n• konfliktusok kezelése\n• kötődési nehézségek\n• magatartás problémák\n• pályaorientáció\n• tanulási motiváció\n• tanulással kapcsolatos nehézségek\n• társakkal való kapcsolati problémák\n• tehetséggondozás\n• stresszkezelés\n• szorongás, teljesítményszorongás\n• váratlan, súlyos élethelyzetekben való támogatás", img:"https://a-hely.com/images/terek%20anna1.jpg", prio:3},
+  {id:47, n:"Csökli István",                  a:"csoekli-istvan",                  r:"Okleveles pszichológus, Integratív tanácsadó jelölt",                              s:"Felnőttek",                                          g:"ferfi", t:"pszichologus", bio:"Pszichológus diplomámat az ELTE Bölcsészettudományi karán szereztem.\nDolgoztam krízis ambulancián, majd hosszú éveket töltöttem el a Tündérhegyi Pszichoterápiás Központban, ahol pszichoanalitikus háttérrel egyéni és csoportos verbális terápiával segítettünk a hozzánk fordulóknak. Érdeklődésem következtében mélyreható ismereteket szereztem hipnózis, imagináció és pszichodráma területén is.\nPszichológiai tanácsadás keretében elsősorban pszichodinamikus szemlélettel segítem a hozzám fordulókat, ami azt jelenti, hogy feltárjuk a kliens megküzdési mintáit, a megküzdési mintákat mozgató érzelmeket, és a kliens erőforrásait felhasználva azokat korrigáljuk. Dolgozom még hipnózissal (KIP) is, ahol hívóképek segítségével szimbolikusan közelítjük meg a diszfunkciókat. Ezen kívül szükség esetén a kognitív pszichológia elemeit is használom (feladatok, gyakorlatok végrehajtása, jegyzetek készítése, stb.)   \nMÓDSZEREK, amiket használok:\nPszichológiai tanácsadás\nHipnózis\nTANULMÁNYOK /TOVÁBBKÉPZÉSEK\n- ELTE Pszichológia\n- Hipnózis\n- Pszichodráma\n- Integratív képzés\n- ICF Coach", miben:"Miben tudok segíteni?\n• pánikrohamok , fóbiák, IBS szerű tünetek\n• trauma kezelés, bántalmazó kapcsolatok\n• érzelmi bizonytalanságok, elakadások (pl. kapunyitás, kapuzárás, életközépi válság)\n• önismereti és önértékelési kérdések, önérvényesítési nehézségek\n• veszteségek (betegség, gyász, szakítás, munkahely elvesztése) feldolgozása\n• étkezési rendellenességek, különösen a túlevés\n• kapcsolati problémák\n• megterhelő munkahelyi környezet kezelése\n• szorongás, gyötrő félelmek\n• életvezetési nehézségek\n• krízisekátvészelése, feldolgozása,konlkiktusfelyzetek kezelése\n• hangulati problémák, depresszív hangulat, elhúzódó szomorúság\n• döntési nehézségek\n• lelki eredetű testi tünetek\n• szexuális diszfunkciók", img:"https://a-hely.com/images/Csokli%20istvan3.jpg", prio:3},
+  {id:49, n:"Czifra Marianna",                a:"czifra-marianna",                 r:"Pszichológus",                                                                     s:"Felnőttek, 14-18 évesek",                            g:"no",    t:"pszichologus", bio:"Okleveles pszichológus vagyok. Diplomámat (MA) Klinikai és egészségpszichológia szakirányon szereztem. Egyetemi tanulmányaim mellett és utána vezetői pozícióban dolgoztam, egyéb feladataim a toborzás, kiválasztás és dolgozói tréning voltak. Később kormányhivatalban álláskeresőknek nyújtottam segítséget. Jelenleg egyéni tanácsadást tartok felnőtteknek, serdülőknek. Munkám során elsősorban kognitív terápiás, sématerápiás módszereket alkalmazok. A tudatosság, a kommunikáció és az önismeret fejlesztése által minden esetben az a cél, hogy egy eszköztárat alakítsunk ki és erősítsük a kliens problémamegoldó képességét, így a jövőben felmerülő nehézségek megoldása könnyebb, sikeresebb lesz.\nÁr: 20.000 Ft (45-50 perc)\nEmail: pszichologus.neked@gmail.com", miben:"Mind elakadunk olykor az életünkben. Ilyenkor szükség lehet valakire, aki segít továbblendülni, felszínre hozni a benned rejlő megoldást. Ha változtatni szeretnél, mert\n• Úgy érzed, mostanában semmi nem jön össze,\n• Folyton fáradt vagy, nehezen kezdesz bele dolgokba,\n• Halogatsz (feladatokat, találkozókat),\n• A párkapcsolatod épp mélypontra ért,\n• Nem sikerül párt találnod,\n• Nem is tudod, mit akarsz valójában az életedtől,\n• Szorongás jellemzi a mindennapjaidat,\n• Mosolyogsz, de belül nem vagy boldog,\n• Belefáradtál a munkádba, de nem tudod, válts-e,\n• Szülőként tele vagy bizonytalansággal, bűntudattal,\n• Magányosnak érzed magad,\n• Szenvedést okozó gondolataid vannak,\n• Időről időre ugyanabban az élethelyzetben találod magad (sokadik kapcsolatod ugyanúgy végződik, sokadik munkahelyen nem találod a helyed, megint anyagi gondokkal küzdesz),\nKeress bizalommal, segítek!\nMeghallgatom, miben akadtál el, mi az, ami számodra most túl nehéz ahhoz, hogy egyedül megküzdj vele. Ha ezt olvasod, máris bátornak gondolhatod magad. Eljutottál addig, hogy felismerted, valami nem stimmel, és azt is, hogy jól jönne, ha valaki segítene. A gyógyulás ezzel kezdődik. Én pedig segítek, hogy megtaláld a helyed és elindulj az úton, ami a lehető legjobb életedhez vezet.", img:"https://a-hely.com/images/czifra%20mariann.jpg", prio:3},
+  {id:50, n:"Sipos-Bodor Anna",               a:"sipos-bodor-anna",                r:"Pszichológus",                                                                     s:"Felnőttek",                                          g:"no",    t:"pszichologus", bio:"Sipos-Bodor Anna vagyok, okleveles pszichológus és képzésben lévő Katarzis Komplex művészetterapeuta. Korábban pszichoedukációs területen, illetve pedagógiai szakszolgálatban szereztem tapasztalatot, jelenleg pedig két iskolában dolgozom gyerekekkel és szüleikkel. 4 éven át voltam önkéntese az ELTE Kortárs Segítő Csoportnak, ahol fiatal felnőttekkel foglalkoztam csoportos és egyéni helyzetben.\nTanácsadói munkámban elsődlegesnek tekintem, hogy egy olyan biztonságos helyet teremtsek kliensem számára, ahol elakadásaival, nehézségeivel foglalkozhat, illetve megélheti érzéseinek teljes skáláját.\nMunkámban sok művészetterápiás elemet használok. A módszerben a kliens érzései, vágyai, belső képei tükröződnek az elkészült alkotásokban és lehetővé teszi, hogy olyan tartalmak is a felszínre kerüljenek, amik a szavak szintjén még nem tudnak megfogalmazódni.\nElérhetőség: sipos.bodor.anna@gmail.com", miben:"• pályaválasztás, pályamódosítás\n• konfliktusokkal kapcsolatos nehézségek, asszertivitás és kommunikáció fejlesztése\n• életvezetési nehézségek\n• alacsony önértékelés\n• stresszkezelés\n• időmenedzsment, hatékonyságnövelés\n• önállóság, leválási nehézségek\n• társas/ párkapcsolati nehézségek", img:"https://a-hely.com/images/bodor%20anna2.jpg", prio:3},
+  {id:51, n:"Hujder Zsófia",                  a:"hujder-zsofia",                   r:"Okleveles pszichológus",                                                           s:"Felnőttek, 7-18 évesek",                            g:"no",    t:"pszichologus", bio:"Hujder Zsófia vagyok, okleveles pszichológus. Diplomámat az Eötvös Lóránd Tudományegyetemen szereztem, tanácsadás és iskolapszichológia specializáción. Jelenleg a Fővárosi Pedagógiai Szakszolgálatnál dolgozom pszichológusként, ahol elsődlegesen gyermekekkel és fiatal felnőttekkel foglalkozom, valamint nevelési kérdésekben segítem a hozzám forduló szülőket. A tanácsadáson kívül diagnosztikus munkát is végzek. További képzettségeimet tekintve autogén tréning gyakorlatvezető képesítést szereztem a Magyar Relaxációs és Szimbólumterápiás Egyesületnél, valamint a VIKOTE Kognitív és Sématerápiás Központ képzésén megismerhettem a kognitív viselkedésterápia gyermekekre adaptált módszereit is.\nPszichológusi munkám során szívesen használok kognitív viselkedésterápiás eszköztárat, valamint oktatom az autogén tréninget is, melynek lényegi eleme, hogy létrehozzuk a pszichés és testi-lelki ellazultságot. Tanácsadás keretein belül fogadok iskolás gyermekeket és olyan felnőtteket, akik mélyebben megismerkednének a relaxációs módszerrel.\nÁr: Érdeklődjön telefonon/emailen", miben:"• Önismeret\n• Stresszkezelés, szorongásoldás\n• Magatartási és beilleszkedési problémák\n• Kommunikációs készség-fejlesztés, konfliktuskezelés\n• Gyermeknevelési kérdések", img:"https://a-hely.com/images/hujder%20zsofi.jpg", prio:3},
+  {id:52, n:"Dr. Zelinka Judit",              a:"dr-zelinka-judit",                r:"Pszichoterapeuta szakorvos",                                                       s:"Felnőttek",                                          g:"no",    t:"pszichoterapeuta", bio:"1999-ben általános orvosi diplomát szereztem a Semmelweis Orvostudományi Egyetem Általános Orvostudományi Karán, majd 2004-ben  háziorvosi szakvizsgát tettem. 2002-2013-ig saját felnőtt háziorvosi praxis vezettem Budapest XVIII. kerületében.  Szakmai érdeklődésem középpontjában már ekkor is a pszichés betegségek kialakulása, megelőzésének és kezelésének lehetősége állt.   2017-2020 között elvégeztem a Semmelweis Egyetem Általános Orvostudományi Kara  és a Magyar Viselkedés-, Kognitív  és Sématerápiás Egyesület által szervezett pszichoterápia szakvizsgára felkészítő képzést.  2020. szeptemberében kognitív viselkedésterápiából módszerspecifikus záróvizsgát majd 2021. májusában pszichoterápia szakvizsgát tettem. Jelenleg sématerápia módszerben képződöm.\nÁr: 20000 Ft, 50 perc\nEmail: dr.zelinka.judit@gmail.com", miben:"Miben segíthetek?\nMódszerspecifikus végzettségem a kognitív viselkedésterápia, melyet egyéni üléseken felnőtt pácienseknek ajánlok heti egy alkalommal. A kognitív terápia  lényege, hogy azonosítja a gondolkodásban lévő torzításokat, hiedelmeket, logikai hibákat, majd a gondolkodás és viselkedés módosításán keresztül a hangulat és a magatartás kedvező irányú változását segíti elő. \nA kognitív terápia  hatékony pszichoterápiás módszer hangulatzavarok,  szorongásos zavarok, fóbiák, pánik zavar, evészavarok, poszttraumás stressz zavar, alkalmazkodási zavarok, testi panaszokkal összefüggő pszichés zavarok és egyes személyiségzavarok esetén. A terápia a diagnózistól függően 15-50 ülést vesz igénybe, aktív strukturált terápiás ülések formájában folyik, előre kialakított terápiás terv alapján. Az ülések gyakorisága heti egy alkalom, hossza 50 perc. A terápiához tartozik két ülés között un. házi feladatok elvégzése.\nA viselkedésterápia olyan módszerek együttese, amelyek az egyén és környezete közötti kapcsolatban bekövetkező zavarok megszüntetését célozzák. Ennek érdekében kontrollálják az egyén környezetét, továbbá arra törekszenek, hogy az egyén a saját viselkedése és annak következményei fölötti uralomra tegyen szert. Célja a maladaptív viselkedésformák kedvező irányú befolyásolása, valamint a hiányzó, de szükséges magatartásformák kialakítása a tanuláselmélet törvényszerűségei alapján. A viselkedésterápia egyéni üléseken, heti gyakorisággal 50 perces órákon történik előre kialakított terápiás terv alapján. A viselkedésterápia elsődleges indikációi: fóbiák, kényszerek, szexuális funkciózavarok, impulzus kontroll zavarok, kóros szokások (dohányzás, alkohol abúzus, játékszenvedély), evészavarok.\nHogyan segíthetek?\nA terápiát minden esetben egy diagnosztikus szakasz előzi meg. Ezek után javaslatot teszek arra, milyen pszichoterápiás módszer lenne alkalmas a zavar, vagy betegség kezelésére. Ezt  követi a terápiás terv kidolgozása, majd a terápiás szerződéskötés, melyben közösen megállapodunk a terápia feltételeiről,  módjáról, idejéről. A pszichoterápia elköteleződést jelent, heti egy vagy két alkalommal előre lefixált időpontokban, a szerződésben meghatározott ideig.", img:"https://a-hely.com/images/zelinka.jpg", prio:3},
+  {id:53, n:"Holló Mária",                    a:"hollo-maria",                     r:"Pszichológus",                                                                     s:"Felnőttek",                                          g:"no",    t:"pszichologus", bio:"Eredetileg angol fordítóként kezdtem a pályámat, de az emberi lélek működése iránti érdeklődésem végül a pszichológia felé vezetett. A Károli Gáspár Református Egyetemen szereztem mesterdiplomát felnőtt klinikai és egészségpszichológia szakirányon. Szakmai tapasztalataimat pszichiátriai ellátásban és pszichoedukációs foglalkozásokon szereztem, munkámat rendszeres szakmai szupervízió mellett végzem. Több mint hat év önismereti tapasztalattal rendelkezem, amely segíti az empatikus és elfogadó jelenlétemet. A közös munka során arra törekszem, hogy a hozzám fordulók biztonságos légkörben beszélhessenek nehézségeikről, és jobban rálássanak saját működésükre. Szemléletemben az embert testi, lelki és kapcsolati egységként közelítem meg. Fontosnak tartom a visszatérő mintázatok felismerését és a belső erőforrások tudatosítását, amelyek segíthetnek abban, hogy az egyén kiegyensúlyozottabban és tudatosabban élje a mindennapjait.\nÁr: Első, tájékozódó beszélgetés: 17 000 Ft (kedvezményes első alkalom) – 50 perc További alkalmak: 20 000 Ft / 50 perc\nElérhetőség: https://www.hollomaria.hu/ +36 70 655 3231 h.m.pszichologus@gmail.com", miben:"Elsősorban szorongás, stressz és túlterheltség, önbizalom- és önértékelési nehézségek, valamint élethelyzeti elakadások esetén nyújtok támogatást. A közös munka során együtt tekintjük át a nehézségek hátterében álló gondolatokat, érzelmeket és visszatérő mintázatokat, hogy ezekre tudatosabban lehessen rálátni. Gyakori témák lehetnek például az állandó aggodalom, belső feszültség, döntési nehézségek, munkahelyi stressz, határok meghúzása, valamint kapcsolati problémák és visszatérő konfliktusok. Az önismereti folyamat nemcsak nehézségek esetén lehet hasznos: abban is segíthet, hogy jobban megértse saját működését, és tudatosabban alakítsa az életét.", img:"https://a-hely.com/images/Hollo%20maria.jpg", prio:3},
+  {id:59, n:"Turnyánszki Henriett Katalin",   a:"turnyanszki-henriett-katalin",    r:"Tanácsadó Szakpszichológus, Krízistanácsadó Szakpszichológus",                    s:"Felnőttek",                                          g:"no",    t:"pszichologus", bio:"Turnyánszki Henriett Katalin vagyok, Tanácsadó Szakpszichológus, Krízistanácsadó Szakpszichológus, Kognitív Viselkedésterapeuta , Sématerapeuta jelölt, Integratív Terapeuta jelölt, Gyász és Veszteség feldolgozó.\nMunkám során elsősorban felnőtt kliensekkel dolgozom egyéni tanácsadás és terápiás támogatás keretében. Szakmai szemléletem alapját a kognitív viselkedésterápia (CBT), a sématerápia, a krízisintervenció és az integratív pszichológiai megközelítés adja. Fontos számomra a biztonságos, elfogadó légkör és a hiteles terápiás kapcsolat kialakítása, ahol a kliens saját tempójában dolgozhat önmagán.\nHiszek abban, hogy még a hosszabb ideje fennálló nehézségek esetén is lehetséges a változás és az új működésmódok kialakítása. A közös munka során fontosnak tartom az empatikus jelenlétet, a strukturált szakmai vezetést, valamint azt, hogy klienseim a problémáik mélyebb megértése mellett a mindennapokban is használható megküzdési eszközöket kapjanak.\nFolyamatosan képzem magam, szakmai munkámban pedig kiemelten fontosnak tartom a korszerű, tudományos alapokon nyugvó módszerek alkalmazását.", miben:"Amiben segíthetek:\n• Szorongásos problémák\n• Pánik és fokozott testi szorongás tünetek\n• Stressz, túlterheltség, kiégés\n• Krízishelyzetek\n• Gyász- és veszteségfeldolgozás\n• Életvezetési nehézségek és elakadások\n• Önismeret és személyes fejlődés\n• Önbizalom- és önértékelési problémák\n• Perfekcionizmus, túlzott megfelelési kényszer\n• Kapcsolati és párkapcsolati nehézségek\n• Határhúzási nehézségek\n• Érzelemszabályozási nehézségek\n• Konfliktuskezelési problémák\n• Döntési helyzetek, élethelyzeti elakadások\n• Munkahelyi stressz és munkahelyi nehézségek\n• Motivációvesztés, bizonytalanság\n• Sématerápiás esetek\n• Veszteségekhez és változásokhoz való alkalmazkodás\n• Női élethelyzeti nehézségek\n• Kommunikációs nehézségek\n• Megküzdési készségek fejlesztése\n• Tartósan fennálló negatív gondolatok és önkritika\n• Lelki egyensúly helyreállítása\n• Önérvényesítés fejlesztése\n• Támogató pszichológiai konzultáció nehéz élethelyzetekben\nAlkalmazott módszerek:\n• Kognitív viselkedésterápia (CBT)\n• Sématerápia\n• Integratív pszichológiai szemlélet\n• Krízisintervenció\n• Gyász- és veszteségfeldolgozás\n• Relaxációs és imaginációs technikák\n• NLP technikák\n• Pszichoedukáció\n• Stresszkezelési és önismereti módszerek"}
+];
+SP.forEach(function(s){ s.url = "https://a-hely.com/munkatarsaink/" + s.id + "-" + s.a; });
+
+// Névnormalizálás: kisbetű + ékezetek eltávolítása
+function norm(str){
+  return str.toLowerCase()
+    .replace(/á/g,"a").replace(/é/g,"e").replace(/í/g,"i")
+    .replace(/ó/g,"o").replace(/ö/g,"o").replace(/ő/g,"o")
+    .replace(/ú/g,"u").replace(/ü/g,"u").replace(/ű/g,"u")
+    .replace(/[^a-z0-9 ]/g,"").replace(/\s+/g," ").trim();
+}
+
+// Fuzzy névkeresés - töredékes névből is megtalálja
+function findSP(txt){
+  var v = norm(txt);
+  // 1. Teljes névegyezés
+  for(var i=0;i<SP.length;i++){
+    if(norm(SP[i].n) === v) return SP[i];
+  }
+  // 2. A keresett szó benne van a névben (vagy fordítva)
+  for(var i=0;i<SP.length;i++){
+    var sn = norm(SP[i].n);
+    if(sn.indexOf(v) > -1 || v.indexOf(sn) > -1) return SP[i];
+  }
+  // 3. Szavankénti keresés - ha bármelyik szó egyezik (min 4 karakter)
+  var words = v.split(" ").filter(function(w){ return w.length >= 4; });
+  for(var i=0;i<SP.length;i++){
+    var sn = norm(SP[i].n);
+    for(var j=0;j<words.length;j++){
+      if(sn.indexOf(words[j]) > -1) return SP[i];
+    }
+  }
+  // 4. Legjobb részleges egyezés
+  var best = null, bestScore = 0;
+  for(var i=0;i<SP.length;i++){
+    var sn = norm(SP[i].n);
+    var score = 0;
+    var vw = v.split(" ");
+    var snw = sn.split(" ");
+    for(var j=0;j<vw.length;j++){
+      for(var k=0;k<snw.length;k++){
+        if(vw[j].length >= 3 && snw[k].indexOf(vw[j]) > -1) score += vw[j].length;
+      }
+    }
+    if(score > bestScore){ bestScore = score; best = SP[i]; }
+  }
+  if(bestScore >= 4) return best;
+  return null;
+}
+
+// Állapot
+// --- Statisztika naplózás ---
+var SESSION_ID = 'sid_' + Date.now() + '_' + Math.random().toString(36).slice(2,10);
+function sendEvent(eventType, eventData){
+  try{
+    fetch("https://a-hely.com/log.php", {
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body: JSON.stringify({session_id:SESSION_ID, event_type:eventType, event_data:eventData || {}})
+    }).catch(function(){});
+  }catch(e){}
+}
+
+var state = {kor:null, vegzettseg:null, nem:null, forma:null, temak:[]};
+var freeTextSearch = false;
+var lastRecommended = []; // utoljára ajánlott szakemberek ID-i
+var lastCandidates = []; // összes releváns jelölt az utolsó keresésből
+var step = 0; // 0=start, 1=kor, 2=vegzettseg, 3=nem, 4=forma, 5=tema, 6=kesz, -1=nevkereses
+var selectedTopics = [];
+var busy = false;
+
+// Gombok definíciói
+var BTNS = {
+  start: [
+    {l:"Igen, konkrét szakembert keresek", v:"konkret", img:"https://a-hely.com/images/turnyanszkih.png", prio:3},
+    {l:"Nem, segíts választani!", v:"segits"}
+  ],
+  kor: [
+    {l:"Felnőtt (18+)", v:"felno"},
+    {l:"Kamasz (14-18 év)", v:"kamasz"},
+    {l:"Gyermek (7-13 év)", v:"gyerek"},
+    {l:"Kisgyermek (3-6 év)", v:"kiskoru"},
+    {l:"Csecsemő / kisgyermek (0-3 év)", v:"csecsemo"}
+  ],
+  vegzettseg: [
+    {l:"Klinikai szakpszichológus", v:"klinikai"},
+    {l:"Pszichológus / tanácsadó", v:"pszichologus"},
+    {l:"Pszichoterapeuta", v:"pszichoterapeuta"},
+    {l:"Coach", v:"coach"},
+    {l:"Mindegy / nem tudom", v:"mindegy"}
+  ],
+  nem: [
+    {l:"Női szakembert", v:"no"},
+    {l:"Férfi szakembert", v:"ferfi"},
+    {l:"Mindegy", v:"mindegy"}
+  ],
+  forma: [
+    {l:"Személyes (Budapest)", v:"szemelyes"},
+    {l:"Online", v:"online"},
+    {l:"Mindegy", v:"mindegy"}
+  ],
+  tema_felno: [
+    {sec:"Pszichológiai témák"},
+    {l:"Szorongás", v:"Szorongással kapcsolatban keresek segítséget"},
+    {l:"Stressz / kiégés", v:"Stresszel vagy kiégéssel kapcsolatban keresek segítséget"},
+    {l:"Párkapcsolat / család", v:"Párkapcsolati vagy családi problémával kapcsolatban keresek segítséget"},
+    {l:"Szülő-gyermek kapcsolat", v:"Szülő-gyermek kapcsolattal kapcsolatban keresek segítséget"},
+    {l:"Szülői szerep / nevelési kérdések", v:"Szülői szereppel vagy nevelési kérdésekkel kapcsolatban keresek segítséget"},
+    {l:"Gyász / veszteség", v:"Gyásszal vagy veszteséggel kapcsolatban keresek segítséget"},
+    {l:"Önismeret / élethelyzet", v:"Önismerettel vagy élethelyzeti elakadással kapcsolatban keresek segítséget"},
+    {l:"Lehangoltság / depresszió", v:"Tartós lehangoltsággal vagy depresszióval kapcsolatban keresek segítséget"},
+    {l:"Trauma / bántalmazás", v:"Traumával vagy bántalmazással kapcsolatban keresek segítséget"},
+    {l:"Krízis / sürgős", v:"Krízisben vagyok és sürgős segítséget keresek"},
+    {l:"Addikció", v:"Addikciós problémával kapcsolatban keresek segítséget"},
+    {l:"Szexuálpszichológia", v:"Szexuálpszichológiai kérdésben keresek segítséget"},
+    {l:"LMBTQ - szexuális identitás, orientáció", v:"LMBTQ témában, szexuális identitással vagy orientációval kapcsolatos nehézséggel kapcsolatban keresek segítséget"},
+    {l:"Sport / teljesítmény", v:"Sport vagy teljesítménnyel kapcsolatban keresek segítséget"},
+    {l:"Beilleszkedési nehézségek", v:"Beilleszkedési nehézségekkel kapcsolatban keresek segítséget"},
+    {l:"Más téma", v:"Más témában keresek segítséget"},
+    {sec:"Coaching, tanácsadás"},
+    {l:"Karrier / karrierváltás", v:"Karrier vagy karrierváltás témában keresek coaching segítséget"},
+    {l:"Célkeresés / iránykeresés", v:"Célkereséssel vagy iránykeresással kapcsolatban keresek coaching segítséget"},
+    {l:"Célkitűzés / célmegvalósítás", v:"Célkitűzéssel vagy célmegvalósítással kapcsolatban keresek coaching segítséget"},
+    {l:"Vezetők támogatása", v:"Vezetőként keresek coaching támogatást"},
+    {l:"Munka-magánélet egyensúly", v:"Munka-magánélet egyensúllyal kapcsolatban keresek segítséget"},
+    {l:"Teljesítmény / motiváció", v:"Teljesítménnyel vagy motivációval kapcsolatban keresek coaching segítséget"},
+    {sec:""},
+    {l:"Más téma", v:"Más témában keresek segítséget"}
+  ],
+  tema_kamasz: [
+    {l:"Szorongás / félelmek", v:"Szorongással vagy félelmekkel kapcsolatban keresek segítséget"},
+    {l:"Iskolai problémák", v:"Iskolai problémákkal kapcsolatban keresek segítséget"},
+    {l:"Beilleszkedési nehézségek", v:"Beilleszkedési nehézségekkel kapcsolatban keresek segítséget"},
+    {l:"Viselkedési problémák", v:"Viselkedési problémákkal kapcsolatban keresek segítséget"},
+    {l:"Hangulati problémák", v:"Hangulati problémákkal kapcsolatban keresek segítséget"},
+    {l:"Kapcsolati nehézségek", v:"Kapcsolati nehézségekkel kapcsolatban keresek segítséget"},
+    {l:"Sport / teljesítmény", v:"Sport vagy teljesítménnyel kapcsolatban keresek segítséget"},
+    {l:"Trauma / bántalmazás", v:"Traumával vagy bántalmazással kapcsolatban keresek segítséget"},
+    {l:"LMBTQ - szexuális identitás, orientáció", v:"LMBTQ témában, szexuális identitással vagy orientációval kapcsolatos nehézséggel kapcsolatban keresek segítséget"},
+    {l:"Krízis / sürgős", v:"Krízisben van a kamasz és sürgős segítséget keresek"},
+    {l:"Más téma", v:"Más témában keresek segítséget"}
+  ],
+  tema_gyerek: [
+    {l:"Szorongás / félelmek", v:"Szorongással vagy félelmekkel kapcsolatban keresek segítséget"},
+    {l:"Iskolai / tanulási gondok", v:"Iskolai vagy tanulási nehézségekkel kapcsolatban keresek segítséget"},
+    {l:"Viselkedési nehézségek", v:"Viselkedési nehézségekkel kapcsolatban keresek segítséget"},
+    {l:"Szülő-gyermek kapcsolat", v:"Szülő-gyermek kapcsolattal kapcsolatban keresek segítséget"},
+    {l:"Szülői szerep / nevelési kérdések", v:"Szülői szereppel vagy nevelési kérdésekkel kapcsolatban keresek segítséget"},
+    {l:"Beilleszkedési nehézségek", v:"Beilleszkedési nehézségekkel kapcsolatban keresek segítséget"},
+    {l:"Trauma / bántalmazás", v:"Traumával vagy bántalmazással kapcsolatban keresek segítséget"},
+    {l:"Fejlődési kérdések / SNI", v:"Fejlődési kérdésekkel vagy SNI-vel kapcsolatban keresek segítséget"},
+    {l:"Más téma", v:"Más témában keresek segítséget"}
+  ],
+  tema_csecsemo: [
+    {l:"Szülő-csecsemő kapcsolat", v:"Szülő-csecsemő kapcsolattal kapcsolatban keresek segítséget"},
+    {l:"Alvás / étkezési nehézségek", v:"Alvási vagy étkezési nehézségekkel kapcsolatban keresek segítséget"},
+    {l:"Fejlődési aggodalmak", v:"Fejlődési aggodalmakkal kapcsolatban keresek segítséget"},
+    {l:"Szülői stressz / kiégés", v:"Szülői stresszel vagy kiégéssel kapcsolatban keresek segítséget"},
+    {l:"Más téma", v:"Más témában keresek segítséget"}
+  ]
+};
+
+// UI
+function botMsg(txt){
+  var d = document.createElement("div");
+  d.className = "msg bot";
+  d.innerHTML = txt.replace(/\n/g,"<br>");
+  document.getElementById("msgs").appendChild(d);
+  scroll();
+  return d;
+}
+function userMsg(txt){
+  var d = document.createElement("div");
+  d.className = "msg user";
+  d.textContent = txt;
+  document.getElementById("msgs").appendChild(d);
+  scroll();
+}
+function crisisMsg(){
+  sendEvent('crisis_shown');
+  var d = document.createElement("div");
+  d.className = "msg crisis";
+  d.innerHTML = "Ha úgy érzed, hogy közvetlen veszélyben vagy, vagy önsértéssel / öngyilkossággal kapcsolatos gondolataid vannak, kérlek, azonnal hívd a <strong>112</strong>-t, vagy keresd a területileg illetékes sürgősségi ellátást.<br><br>Ha nem vagy közvetlen veszélyben, de nagyon megterhelő, amit átélsz — érdemes mielőbb szakemberrel kapcsolatba lépned.";
+  document.getElementById("msgs").appendChild(d);
+  scroll();
+}
+function scroll(){
+  var m = document.getElementById("scrollArea");
+  var sections = document.querySelectorAll("#btns .sec");
+  if(sections.length > 1){
+    // Több kategóriára bontott gomblistánál (pl. témaválasztás) ne az aljára ugorjunk,
+    // hanem a kérdés (utolsó bot üzenet) tetejére, hogy minden kategória látható legyen görgetéssel.
+    var msgs = document.getElementById("msgs");
+    var bots = msgs.querySelectorAll(".msg.bot");
+    var lastBot = bots.length ? bots[bots.length - 1] : null;
+    if(lastBot){ lastBot.scrollIntoView({behavior:"smooth", block:"start"}); return; }
+  }
+  m.scrollTop = m.scrollHeight;
+}
+
+function showCard(sp, context){
+  sendEvent('recommendation_shown_card', {name:sp.n, context: context || 'unknown'});
+  var tags = sp.s.split(",").map(function(t){ return t.trim(); }).filter(Boolean);
+  var d = document.createElement("div");
+  d.className = "card";
+  var imgHtml = "";
+  if(sp.img){
+    var im = document.createElement("img");
+    im.src = sp.img;
+    im.alt = sp.n;
+    im.onerror = function(){ this.style.display="none"; };
+    im.style.cssText = "width:56px;height:56px;border-radius:50%;object-fit:cover;flex-shrink:0;border:2px solid #c8f5f3;display:block";
+    imgHtml = im.outerHTML;
+  } else {
+    imgHtml = "<div style='width:56px;height:56px;border-radius:50%;background:#e8faf6;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0'>&#128100;</div>";
+  }
+  var capBadge = hasCapacity(sp)
+    ? "<span class='cap-badge cap-free'>Szabad kapacitással rendelkezik</span>"
+    : "<span class='cap-badge cap-wait'>Várólista lehetséges</span>";
+  d.innerHTML = "<div style='display:flex;gap:12px;align-items:flex-start'>"+imgHtml+"<div style='flex:1'><h4>"+sp.n+"</h4><div class='role'>"+sp.r+"</div>"+capBadge+"<div class='tags'>"+tags.map(function(t){ return "<span class='tag'>"+t+"</span>"; }).join("")+"</div><a href='"+sp.url+"' target='_blank'>Profil megtekintése</a></div></div>";
+  document.getElementById("msgs").appendChild(d);
+  var profileLink = d.querySelector("a");
+  if(profileLink){
+    profileLink.addEventListener("click", function(){
+      sendEvent('profile_link_clicked', {name:sp.n, context: context || 'unknown'});
+    });
+  }
+  scroll();
+}
+
+// Egy kategória-fejléc beszúrása az üzenetfolyamba (kártyák csoportosításához)
+function showSectionLabel(text){
+  var msgs = document.getElementById("msgs");
+  var s = document.createElement("div");
+  s.className = "resultSec";
+  s.textContent = text;
+  msgs.appendChild(s);
+}
+
+// Kártyalista megjelenítése két csoportban: előbb a szabad kapacitásúak,
+// utána a várólistások, mindkettő elé fejléccel — csak ha van benne elem.
+function showCardsGrouped(list, context, onEach){
+  var free = list.filter(function(sp){ return hasCapacity(sp); });
+  var wait = list.filter(function(sp){ return !hasCapacity(sp); });
+  function renderGroup(arr){
+    arr.forEach(function(sp){
+      showCard(sp, context);
+      if(onEach) onEach(sp);
+    });
+  }
+  if(free.length){ showSectionLabel("Szabad kapacitással rendelkező kollégák"); renderGroup(free); }
+  if(wait.length){ showSectionLabel("Kollégák, akiknél várólista van:"); renderGroup(wait); }
+}
+
+// A szabadszöveges beviteli sor csak ott jelenjen meg, ahol valóban kötelező a gépelés
+// (névkeresés), vagy ahol a látogató kifejezetten a "Más téma" lehetőséget választotta.
+// Minden más gombos lépésnél (kor, végzettség, nem, forma, ÉS a témaválasztás is) NEM
+// jelenik meg - ott a gombok közül kell választani, a szabad szöveg nem releváns.
+var FREE_TEXT_STEPS = [];
+function hideInputRow(){
+  document.getElementById("row").className = "off";
+}
+function showInputRow(placeholder){
+  var row = document.getElementById("row");
+  row.className = "";
+  document.getElementById("inp").placeholder = placeholder || "Válassz vagy írj ide szabadon...";
+}
+
+function showBtns(key, multi){
+  if(FREE_TEXT_STEPS.indexOf(key) > -1){
+    showInputRow("Válassz fent, vagy írj ide szabadon...");
+  } else {
+    hideInputRow();
+  }
+  var c = document.getElementById("btns");
+  c.innerHTML = "";
+  c.className = "";
+  selectedTopics = [];
+  var items = BTNS[key] || [];
+  if(multi){
+    var info = document.createElement("div");
+    info.style.cssText = "width:100%;font-size:12px;color:#666;margin-bottom:4px";
+    info.textContent = "Több témát is választhatsz, majd kattints a Tovább gombra.";
+    c.appendChild(info);
+  }
+  for(var i=0;i<items.length;i++){
+    var item = items[i];
+    if(item.sec !== undefined){
+      if(!item.sec) continue;
+      var s = document.createElement("div");
+      s.className = "sec";
+      s.textContent = item.sec;
+      c.appendChild(s);
+      continue;
+    }
+    var btn = document.createElement("button");
+    btn.className = "b";
+    btn.textContent = item.l;
+    if(multi){
+      (function(b, val){ b.onclick = function(){ toggleT(b, val); }; })(btn, item.v);
+    } else {
+      (function(b, lbl, val){ b.onclick = function(){ pick(lbl, val); }; })(btn, item.l, item.v);
+    }
+    c.appendChild(btn);
+  }
+  if(multi){
+    var tv = document.createElement("button");
+    tv.className = "tovabb";
+    tv.id = "tv";
+    tv.textContent = "Tovább a kiválasztott témákkal";
+    tv.onclick = sendTopics;
+    c.appendChild(tv);
+  }
+  scroll();
+}
+function hideBtns(){ var c = document.getElementById("btns"); c.className = "off"; c.innerHTML = ""; }
+function toggleT(btn, val){
+  var idx = selectedTopics.indexOf(val);
+  if(idx > -1){ selectedTopics.splice(idx,1); btn.classList.remove("on"); }
+  else { selectedTopics.push(val); btn.classList.add("on"); }
+  var tv = document.getElementById("tv");
+  if(tv) tv.style.display = selectedTopics.length > 0 ? "block" : "none";
+}
+// Logikai ellenőrzés
+var GYEREK_KOROK = ["csecsemo","kiskoru","gyerek","kamasz"];
+var FELNO_TEMAK_KIZARO = ["Karrier","karrierváltás","Célkeresés","Célkitűzés","Vezetők","Munka-magánélet","Teljesítmény / motiváció","Szexuál","Addikció","üzleti"];
+
+function checkLogic(temak){
+  if(!state.kor) return true;
+  if(GYEREK_KOROK.indexOf(state.kor) > -1){
+    for(var i=0;i<temak.length;i++){
+      for(var j=0;j<FELNO_TEMAK_KIZARO.length;j++){
+        if(temak[i].indexOf(FELNO_TEMAK_KIZARO[j]) > -1) return false;
+      }
+    }
+  }
+  return true;
+}
+
+function restart(){
+  state = {kor:null, vegzettseg:null, nem:null, forma:null, temak:[]};
+  step = 0;
+  selectedTopics = [];
+  busy = false;
+  freeTextSearch = false;
+  document.getElementById("msgs").innerHTML = "";
+  hideBtns();
+  SESSION_ID = 'sid_' + Date.now() + '_' + Math.random().toString(36).slice(2,10);
+  sendEvent('session_start', {restarted:true});
+  botMsg("Újraindítottam a keresést! Keresel már konkrét szakembert, vagy segítsek választani?");
+  showBtns("start");
+}
+
+function sendTopics(){
+  if(!selectedTopics.length) return;
+  var lbl = selectedTopics.length === 1 ? selectedTopics[0] : "Több témában is keresek segítséget: " + selectedTopics.join("; ");
+  state.temak = selectedTopics;
+  sendEvent('topics_selected', {kor:state.kor, temak:selectedTopics});
+  userMsg(lbl);
+  hideBtns();
+  var masTemaban = false;
+  for(var mi=0;mi<selectedTopics.length;mi++){
+    if(selectedTopics[mi].indexOf("Más témában") > -1){ masTemaban = true; break; }
+  }
+  if(masTemaban){
+    hideBtns();
+    botMsg("Köszönöm! Írd le röviden, milyen témában keresel segítséget — hátha tudok ajánlani valakit. Ha mégsem találunk megfelelő szakembert, mindenképp vedd fel velünk a kapcsolatot, csapatunk segít.");
+    showInputRow("Írd le, milyen segítségre van szükséged...");
+    freeTextSearch = true;
+    step = 5;
+    return;
+  }
+  if(!checkLogic(selectedTopics)){
+    botMsg("Úgy tűnik, a választott témák nem illeszkednek a korábban megadott korcsoporthoz. Például csecsemőnél vagy kisgyermeknél karrierrel kapcsolatos kérdések nem jellemzők. Kérjük indítsuk újra a keresést!");
+    hideInputRow();
+    var c = document.getElementById("btns");
+    c.className = "";
+    var btn = document.createElement("button");
+    btn.className = "b";
+    btn.textContent = "Újraindítás";
+    btn.onclick = restart;
+    c.appendChild(btn);
+    return;
+  }
+  callAI();
+}
+
+// Lépéskezelő
+function pick(lbl, val){
+  sendEvent('step', {step:step, value:val});
+  userMsg(lbl);
+  hideBtns();
+  if(step === 0){
+    if(val === "konkret"){
+      step = -1;
+      botMsg("Írd be a keresett szakember nevét, és azonnal megmutatom a profilját!");
+      showInputRow("Írd be a szakember nevét...");
+    } else {
+      step = 1;
+      botMsg("1. Milyen korú személynek keresel segítséget?");
+      showBtns("kor");
+    }
+  } else if(step === 1){
+    state.kor = val;
+    step = 2;
+    botMsg("2. Milyen típusú szakembert keresel? Pszichológust, vagy inkább egy coachot, aki az élethelyzeteddel, karrierrel, céljaiddal foglalkozik?");
+    showBtns("vegzettseg");
+  } else if(step === 2){
+    state.vegzettseg = val;
+    if(val === "coach"){
+      step = 6;
+      botMsg("Tökéletes! Coaching területen az A Hely csapatából elsősorban ajánlom:");
+      showCard(SP[1], "coach"); // Oláh Imre
+      botMsg("Az asszisztens nem ad diagnózist, és nem helyettesíti a pszichológiai, orvosi vagy sürgősségi ellátást.\n\nHa bizonytalan vagy, vedd fel velünk a kapcsolatot: https://a-hely.com/kapcsolat");
+      showInputRow("Válassz vagy írj ide szabadon...");
+      scroll();
+    } else {
+      step = 3;
+      botMsg("3. Tökéletes, értem. Most egy másik kérdés: van-e preferenciád a szakember neme tekintetében?");
+      showBtns("nem");
+    }
+  } else if(step === 3){
+    state.nem = val;
+    step = 4;
+    botMsg("4. Köszönöm. Akkor a következő kérdés: szeretnél személyesen találkozni valakivel, vagy inkább online konzultációt részesítesz előnyben?");
+    showBtns("forma");
+  } else if(step === 4){
+    state.forma = val;
+    step = 5;
+    botMsg("5. Tökéletes! Most már csak az utolsó lépés: milyen témával szeretnél foglalkozni egy szakemberrel? Mit érzel, hogy most milyen segítségre lenne szükséged?");
+    var tkey = {felno:"tema_felno",kamasz:"tema_kamasz",gyerek:"tema_gyerek",kiskoru:"tema_gyerek",csecsemo:"tema_csecsemo"}[state.kor] || "tema_felno";
+    showBtns(tkey, true);
+  }
+}
+
+// Szabad szöveges input
+function doSend(){
+  var inp = document.getElementById("inp");
+  var val = inp.value.trim();
+  if(!val || busy) return;
+  inp.value = "";
+
+  // Krízis szavak
+  var krizisok = ["ongyilkos","onsertes","meghalni","vegezni","bantom magam"];
+  var vn = norm(val);
+  for(var i=0;i<krizisok.length;i++){
+    if(vn.indexOf(krizisok[i]) > -1){
+      userMsg(val);
+      hideBtns();
+      crisisMsg();
+      return;
+    }
+  }
+
+  // Névkeresés — MINDIG fut, bármely lépésben
+  var found = findSP(val);
+  if(found){
+    userMsg(val);
+    hideBtns();
+    botMsg(found.n + " profilját itt találod:");
+    showCard(found, "name_search");
+    botMsg("Ha szeretnéd, segítek más szakembert is keresni!");
+    return;
+  }
+
+  // Lépés alapú kezelés
+  if(step === -1){
+    // Névkeresési módban vagyunk de nem találtuk
+    userMsg(val);
+    botMsg("Nem találtam ilyen nevű szakembert. Próbálj pontosabb nevet írni (pl. Keul Andrea, Oláh Imre), vagy indítsd el a kérdéssort a gombokkal!");
+    step = 0;
+    showBtns("start");
+    return;
+  }
+
+  if(step === 5){
+    state.temak = [val];
+    sendEvent('topics_selected', {kor:state.kor, temak:[val], free_text:true});
+    userMsg(val);
+    hideBtns();
+    freeTextSearch = true;
+    callAI();
+    return;
+  }
+
+  // Védelmi ág: a beviteli mező ezeken a lépéseken el van rejtve, így ide elvileg
+  // nem juthatunk el normál használat mellett - de ha mégis (pl. korábban begépelt
+  // és Enterrel elküldött szöveg), ne találgassunk alapértékeket, hanem kérjük meg
+  // a látogatót, hogy a gombok közül válasszon.
+  userMsg(val);
+  botMsg("Kérlek, válassz a fenti lehetőségek közül a folytatáshoz!");
+  if(step === 0){ showBtns("start"); }
+  else if(step === 1){ showBtns("kor"); }
+  else if(step === 2){ showBtns("vegzettseg"); }
+  else if(step === 3){ showBtns("nem"); }
+  else if(step === 4){ showBtns("forma"); }
+}
+
+// AI hívás csak ajánlásnál
+
+// Kategória → szakember ID-k
+var KATEGORIA_MAP = {
+  "parkapcsolat":    [8,11,17,37,41,16,26,29,34,43,59,22,53,15,46,45,44,50,52,28,33,49],
+  "par":             [8,11,17,37,41,16,26,29,34,43,59,22,53,15,46,45,44,50,52,28,33,49],
+  "csalad":          [8,11,17,37,41,16,26,29,34,43,59,22,53,45,44,40,52,28,13,33,51,49,50],
+  "szorongas":       [8,33,59,49,29,22,52,53,16,17,39,42,43,15,46,45,44,11,28,26,13,51],
+  "panik":           [8,33,59,49,29,22,52,53,16,17,39,42,43,15,44,11,28,26,13],
+  "stressz":         [8,29,59,18,28,16,17,25,34,43,42,40,22,53,15,46,45,44,50,11,52,26,13,33,51,49],
+  "kieges":          [8,29,59,18,28,16,17,25,34,43,42,40,22,53,15,46,45,44,50,11,52,26,13,33,51,49],
+  "onismeret":       [8,28,25,47,44,49,45,16,17,29,34,39,43,22,53,15,46,50,37,11,52,26,13,33,51],
+  "elethelyzet":     [8,28,18,29,47,16,17,25,34,43,59,22,53,15,46,44,50,11,52,26,13,33,49],
+  "döntes":          [8,28,18,29,47,16,17,25,34,43,59,22,53,15,46,13,26,44,33,49,11,50,52],
+  "gyasz":           [15,17,37,59,18,8,25,29,43,22,53,46,45,13,33,49],
+  "veszteseg":       [15,17,37,59,18,8,25,29,43,22,53,46,45,13,33,49],
+  "trauma":          [33,47,52,22,16,17,25,43,53,15,46],
+  "bantalmazas":     [33,47,52,22,16,17,25,43,53,15,46],
+  "krizis":          [59,18,22,47,52,33,17,43,53,15,46,44],
+  "surgos":          [59,18,22,47,52,33,17,43,53,15,46,44],
+  "addikció":        [11,8,53,33],
+  "addikci":         [11,8,53,33],
+  "szexual":         [16,26,29,53],
+  "lmbtq":           [26,39,59,15,11,33],
+  "szulo-gyermek":   [8,29,42,34,16,43,39,22,15,13,26,11,40,44,33,49,51],
+  "nevelesi":        [8,25,42,34,16,43,39,22,15,44,40,11,13,33,51,49],
+  "iskolai":         [8,29,42,34,16,59,43,39,22,44,40,26,13,51],
+  "beilleszked":     [8,29,42,34,16,59,43,39,22,46,44,40,26,13,51],
+  "viselked":        [8,42,34,43,39,22,46,44,40,26,13,51],
+  "fejlodesi":       [8,42,34,43,40,13,33,51],
+  "sport":           [44,53,15],
+  "teljesitmeny":    [44],
+  "lehangolt":       [33,52,53,8,16,17,29,39,42,43,22,15,44,11,28,26,13,49],
+  "depresszi":       [33,52,53,8,16,17,29,39,42,43,22,15,44,11,28,26,13,49],
+  "hangulati":       [33,52,53,8,16,17,29,39,42,43,22,15,44,11,28,26,13,49],
+  "kapcsolati":      [8,11,17,37,41,16,26,29,34,43,59,22,53,15,45,44,50,40,52,28,13,33,51,49],
+  "alvasi":          [42,40,13],
+  "etkezesi":        [42,40,26],
+  "gyerek":          [13,39,43,34,41,46,42],
+  "gyermek":         [13,39,43,34,41,46,42],
+  "kamasz":          [8,13,39,51,27,41,46,49],
+  "serdulo":         [8,13,39,51,27,41,46,49],
+  "csecsemo":        [42,40,34,22],
+  "kisgyermek":      [42,40,34,39],
+  "karrier":         [9],
+  "coaching":        [9],
+  "celkeress":       [9],
+  "celkituzes":      [9],
+  "vezeto":          [9],
+  "munkahelyi":      [9],
+  "motivacio":       [9],
+};
+
+function specialistMatchesKor(sp, kor){
+  // sp.s a specialty string, pl. "Felnőttek, 14-18 évesek"
+  if(!kor) return true;
+  var s = sp.s;
+  if(kor === "felno") return s.indexOf("Felnőttek") > -1;
+  if(kor === "kamasz") return s.indexOf("14-18") > -1 || s.indexOf("7-18") > -1;
+  if(kor === "gyerek") return s.indexOf("7-18") > -1 || s.indexOf("3-6") > -1;
+  if(kor === "kiskoru") return s.indexOf("3-6") > -1 || s.indexOf("0-3") > -1;
+  if(kor === "csecsemo") return s.indexOf("0-3") > -1;
+  return true;
+}
+
+function hasCategoryMatch(temak){
+  var temakNorm = temak.map(function(t){
+    return t.toLowerCase()
+      .replace(/á/g,"a").replace(/é/g,"e").replace(/í/g,"i")
+      .replace(/ó/g,"o").replace(/ö/g,"o").replace(/ő/g,"o")
+      .replace(/ú/g,"u").replace(/ü/g,"u").replace(/ű/g,"u");
+  }).join(" ");
+  return Object.keys(KATEGORIA_MAP).some(function(k){ return temakNorm.indexOf(k) > -1; });
+}
+
+function getCandidates() {
+  var temakNorm = state.temak.map(function(t){
+    return t.toLowerCase()
+      .replace(/á/g,"a").replace(/é/g,"e").replace(/í/g,"i")
+      .replace(/ó/g,"o").replace(/ö/g,"o").replace(/ő/g,"o")
+      .replace(/ú/g,"u").replace(/ü/g,"u").replace(/ű/g,"u");
+  }).join(" ");
+
+  var idSet = {};
+  Object.keys(KATEGORIA_MAP).forEach(function(k){
+    if(temakNorm.indexOf(k) > -1){
+      KATEGORIA_MAP[k].forEach(function(id){ idSet[id] = true; });
+    }
+  });
+
+  var ids = Object.keys(idSet).map(Number);
+  if(ids.length === 0){
+    ids = SP.filter(function(s){ return s.t !== "coach"; }).map(function(s){ return s.id; });
+  }
+
+  // KÖTELEZŐ: Korcsoport szűrés - mindig fut, sosem hagyható ki
+  ids = ids.filter(function(id){
+    var sp = SP.find(function(s){ return s.id === id; });
+    return sp && specialistMatchesKor(sp, state.kor);
+  });
+
+  // Végzettség szűrés - szintén kötelező, nem írható felül
+  var tipusFilter = state.vegzettseg;
+  if(tipusFilter && tipusFilter !== "mindegy" && tipusFilter !== "coach"){
+    ids = ids.filter(function(id){
+      var sp = SP.find(function(s){ return s.id === id; });
+      if(!sp) return false;
+      if(tipusFilter === "klinikai") return sp.t === "klinikai";
+      if(tipusFilter === "pszichoterapeuta") return sp.t === "pszichoterapeuta";
+      if(tipusFilter === "pszichologus") return sp.t !== "coach";
+      return true;
+    });
+  }
+
+  // Nem szűrés - kötelező
+  var nemFilter = state.nem;
+  if(nemFilter && nemFilter !== "mindegy"){
+    ids = ids.filter(function(id){
+      var sp = SP.find(function(s){ return s.id === id; });
+      return sp && sp.g === nemFilter;
+    });
+  }
+
+  // Ha a szigorú szűrés után KEVÉS marad (de legalább 1), bővítjük csak a témakör-relevánsak közül,
+  // a kor és végzettség szűrést sosem engedjük el
+  if(ids.length < 3){
+    var allTemaIds = Object.keys(idSet).map(Number);
+    var bovitett = allTemaIds.filter(function(id){
+      var sp = SP.find(function(s){ return s.id === id; });
+      if(!sp) return false;
+      // Kor szűrés MINDIG kötelező marad
+      if(!specialistMatchesKor(sp, state.kor)) return false;
+      // Végzettség szűrést itt enyhítjük (csak akkor, ha nem coach-ot kerestek)
+      if(tipusFilter === "coach") return sp.t === "coach";
+      return true;
+    });
+    if(bovitett.length > ids.length){
+      ids = bovitett;
+    }
+  }
+
+  var candidates = ids.map(function(id){
+    return SP.find(function(s){ return s.id === id; });
+  }).filter(Boolean);
+
+  var seen = {};
+  candidates = candidates.filter(function(sp){
+    if(seen[sp.id]) return false;
+    seen[sp.id] = true;
+    return true;
+  });
+
+  candidates.sort(function(a,b){
+    var capA = hasCapacity(a) ? 0 : 1;
+    var capB = hasCapacity(b) ? 0 : 1;
+    if(capA !== capB) return capA - capB;
+    if(a.prio !== b.prio) return a.prio - b.prio;
+    return Math.random() - 0.5;
+  });
+
+  return candidates;
+}
+
+// Kor/végzettség/nem szerint szűrt szakemberkör, kategória-egyezés nélkül.
+// Ezt használja az AI-alapú szabadszöveges keresés, ami a szakemberek
+// szakképzettség-leírása (r mező) és korosztály-specialitása (s mező) alapján
+// próbál illesztést találni akkor, ha a KATEGORIA_MAP kulcsszavak alapján nincs találat.
+function getBaseFilteredSpecialists(){
+  var ids = SP.filter(function(s){ return s.t !== "coach"; }).map(function(s){ return s.id; });
+  ids = ids.filter(function(id){
+    var sp = SP.find(function(s){ return s.id === id; });
+    return sp && specialistMatchesKor(sp, state.kor);
+  });
+  var tipusFilter = state.vegzettseg;
+  if(tipusFilter && tipusFilter !== "mindegy" && tipusFilter !== "coach"){
+    ids = ids.filter(function(id){
+      var sp = SP.find(function(s){ return s.id === id; });
+      if(!sp) return false;
+      if(tipusFilter === "klinikai") return sp.t === "klinikai";
+      if(tipusFilter === "pszichoterapeuta") return sp.t === "pszichoterapeuta";
+      if(tipusFilter === "pszichologus") return sp.t !== "coach";
+      return true;
+    });
+  }
+  var nemFilter = state.nem;
+  if(nemFilter && nemFilter !== "mindegy"){
+    ids = ids.filter(function(id){
+      var sp = SP.find(function(s){ return s.id === id; });
+      return sp && sp.g === nemFilter;
+    });
+  }
+  return ids.map(function(id){ return SP.find(function(s){ return s.id === id; }); }).filter(Boolean);
+}
+
+// AI-alapú illesztés a szakemberek bemutatkozása és "Miben tudok segíteni" szövege alapján.
+// Ezt használjuk mindenhol, ahol nincs (vagy nem elég erős) a validált témakör-egyezés:
+// elsősorban a 24, még nem feldolgozott adatlapú kollégánál, illetve kiegészítésként
+// a szabadszöveges keresésnél a kategória-találatok mellett.
+function fetchBioMatches(pool, onDone){
+  if(pool.length === 0){ onDone([]); return; }
+  var listText = pool.map(function(s){
+    var parts = [s.n];
+    if(s.bio) parts.push("Bemutatkozás: " + s.bio);
+    if(s.miben) parts.push("Miben tudok segíteni: " + s.miben);
+    return parts.join(" | ");
+  }).join("\n---\n");
+  var sys = "Te egy szakember-kereső asszisztens vagy egy pszichológiai/coaching központban. A látogató leírta, milyen segítségre van szüksége. Az alábbi szakemberek bemutatkozó szövege és \"Miben tudok segíteni\" listája alapján válaszd ki AZOKAT a szakembereket - LEGFELJEBB 8-AT -, akiknek a leírása alapján ÉRDEMBEN illeszkedik a látogató igényére. FONTOS: ne korlátozd magad mesterségesen 3 főre - ha 5 vagy 6 szakember is valóban releváns a szöveg alapján, mindet sorold fel. Fordítva is igaz: ha csak 1 valóban releváns, csak azt az 1-et add vissza. Csak akkor válassz valakit, ha ez a szöveg alapján tényleg indokolható - ne találgass, ne erőltess egyezést, ne egészítsd ki a listát kitalált vagy bizonytalan találatokkal csak azért, hogy többet adj vissza. Ha SENKI nem illik egyértelműen, válaszolj PONTOSAN ezzel az egy szóval: NINCS_TALALAT. Ha találtál megfelelőt, válaszolj KIZÁRÓLAG a nevek vesszővel elválasztott listájával, pontosan úgy, ahogy szerepelnek - semmi mást ne írj, se indoklást, se markdownt.";
+  var ctx = "SZAKEMBEREK:\n" + listText + "\n\nLÁTOGATÓ IGÉNYE: " + state.temak.join(", ");
+
+  fetch("https://a-hely.com/proxy.php", {
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body: JSON.stringify({
+      model:"claude-haiku-4-5-20251001",
+      max_tokens:300,
+      system: sys,
+      messages:[{role:"user", content:ctx}]
+    })
+  }).then(function(r){ return r.json(); }).then(function(data){
+    var txt = (data.content || []).map(function(b){ return b.text||""; }).join("").trim();
+    if(!txt || txt.indexOf("NINCS_TALALAT") > -1){ onDone([]); return; }
+    var names = txt.split(",").map(function(n){ return n.trim(); }).filter(Boolean);
+    var matched = [];
+    names.forEach(function(name){
+      var sp = pool.find(function(s){ return s.n === name; }) || findSP(name);
+      if(sp && matched.indexOf(sp) === -1) matched.push(sp);
+    });
+    onDone(matched);
+  }).catch(function(){
+    onDone([]);
+  });
+}
+
+// A végső találatok megjelenítése - bevezető szöveg + kártyák + felelősségi nyilatkozat +
+// "további találatok" vagy kapcsolat kártya. Közös a kategória- és a bio-alapú találatoknak.
+function showFinalResults(candidates){
+  lastCandidates = candidates;
+  lastRecommended = [];
+  var toShow = pickToShow(lastCandidates);
+
+  var ctx = "A látogató az alábbi igénnyel fordult hozzánk:\nKor: " + state.kor + "\nTémák: " + state.temak.join(", ") + "\n\nAz alábbi szakembereket ajánljuk: " + toShow.map(function(s){ return s.n; }).join(", ") + "\n\nÍrj egy rövid (2-3 mondatos), empatikus bevezető szöveget magyarul, ami elmagyarázza miért ajánljuk ezeket a szakembereket. NE sorolj fel neveket, NE használj markdown formázást, csak egyszerű mondatokat!";
+
+  var th = botMsg("Gondolkodom");
+  th.className = "msg thinking";
+
+  fetch("https://a-hely.com/proxy.php", {
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body: JSON.stringify({
+      model:"claude-haiku-4-5-20251001",
+      max_tokens:300,
+      system:"Te egy empatikus szakember-ajánló asszisztens vagy. Írj rövid bevezető szöveget magyarul. Soha ne használj markdown formázást. Soha ne sorold fel a neveket. Csak 2-3 mondatos empatikus szöveg.",
+      messages:[{role:"user", content:ctx}]
+    })
+  }).then(function(r){ return r.json(); }).then(function(data){
+    th.remove();
+    var txt = (data.content || []).map(function(b){ return b.text||""; }).join("");
+    txt = txt.replace(/[*#_`]/g,"").replace(/---/g,"").trim();
+    if(txt) botMsg(txt);
+
+    var shownIds = toShow.map(function(sp){ return sp.id; });
+    sendEvent('recommendation_shown', {kor:state.kor, temak:state.temak, shown: shownIds.map(function(id){
+      var sp = SP.find(function(s){ return s.id === id; }); return sp ? sp.n : id;
+    })});
+    showCardsGrouped(toShow, "recommendation");
+
+    botMsg("Az asszisztens nem ad diagnózist, és nem helyettesíti a pszichológiai, orvosi vagy sürgősségi ellátást.");
+
+    var remaining = lastCandidates.filter(function(sp){
+      return shownIds.indexOf(sp.id) === -1;
+    });
+    if(remaining.length > 0){
+      showTovabbi(remaining);
+    } else {
+      showKapcsolat();
+    }
+
+    busy = false;
+    document.getElementById("go").disabled = false;
+  }).catch(function(){
+    th.className = "msg bot";
+    th.textContent = "Hiba történt, kérlek próbáld újra.";
+    busy = false;
+    document.getElementById("go").disabled = false;
+  });
+}
+
+// Egyetlen témakörre szűrt jelöltlista - ugyanazokat a szűrőket (kor, végzettség, nem)
+// alkalmazza mint a getCandidates(), de csak egyetlen topic szövegét vizsgálja.
+function getCandidatesForTopic(topicText) {
+  var savedTemak = state.temak;
+  state.temak = [topicText];
+  var result = getCandidates();
+  state.temak = savedTemak;
+  return result;
+}
+
+// Csoportos megjelenítés: minden témakörnek külön bevezető szöveg + kártyák.
+// Ha van olyan szakember, aki mindkét/több témában is szerepel, azt kiemelten jelezzük.
+function showGroupedResults(groups) {
+  // groups = [{label: "Téma szöveg röviden", candidates: [sp, ...]}, ...]
+  var allShownIds = {};
+
+  function showGroup(idx) {
+    if (idx >= groups.length) {
+      botMsg("Az asszisztens nem ad diagnózist, és nem helyettesíti a pszichológiai, orvosi vagy sürgősségi ellátást.");
+      showKapcsolat();
+      busy = false;
+      document.getElementById("go").disabled = false;
+      return;
+    }
+    var g = groups[idx];
+    if (g.candidates.length === 0) {
+      botMsg(g.label + " témában sajnos nem találtam hozzád illő szakembert. Vedd fel velünk a kapcsolatot — csapatunk személyesen segít.");
+      showGroup(idx + 1);
+      return;
+    }
+
+    // Jelöljük azokat, akik már egy korábbi csoportban is szerepeltek (mindkét témában tudnak segíteni)
+    var bothIds = g.candidates.filter(function(sp){ return allShownIds[sp.id]; }).map(function(sp){ return sp.id; });
+    var newIds = g.candidates.filter(function(sp){ return !allShownIds[sp.id]; });
+
+    // Bevezető szöveg kérése az AI-tól
+    var toShow = pickToShow(g.candidates);
+    var ctx = "A látogató az alábbi témában keres segítséget: " + g.label + "\nAjánlott szakemberek: " + toShow.map(function(s){ return s.n; }).join(", ") + "\nÍrj 1-2 mondatos, empatikus bevezető szöveget magyarul erről a témáról. Semmi markdown, csak egyszerű mondat.";
+    var th = botMsg("Gondolkodom");
+    th.className = "msg thinking";
+
+    fetch("https://a-hely.com/proxy.php", {
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body: JSON.stringify({
+        model:"claude-haiku-4-5-20251001",
+        max_tokens:200,
+        system:"Te egy empatikus szakember-ajánló asszisztens vagy. Írj 1-2 mondatos bevezető szöveget magyarul. Soha ne használj markdown formázást. Soha ne sorold fel a neveket.",
+        messages:[{role:"user", content:ctx}]
+      })
+    }).then(function(r){ return r.json(); }).then(function(data){
+      th.remove();
+
+      // Fejléc a csoportnak
+      var header = document.createElement("div");
+      header.style.cssText = "font-size:13px;font-weight:700;color:#007A76;text-transform:uppercase;letter-spacing:0.04em;padding:8px 0 2px;align-self:flex-start";
+      header.textContent = g.label;
+      document.getElementById("msgs").appendChild(header);
+
+      var txt = (data.content || []).map(function(b){ return b.text||""; }).join("").replace(/[*#_`]/g,"").replace(/---/g,"").trim();
+      if(txt) botMsg(txt);
+
+      // Kártyák
+      var shownNow = toShow.map(function(sp){ return sp.id; });
+      sendEvent('recommendation_shown', {kor:state.kor, temak:[g.label], shown: toShow.map(function(sp){ return sp.n; })});
+      showCardsGrouped(toShow, "grouped_recommendation", function(sp){
+        allShownIds[sp.id] = true;
+      });
+
+      // "További találatok" ha van
+      var remaining = g.candidates.filter(function(sp){ return shownNow.indexOf(sp.id) === -1; });
+      if(remaining.length > 0){
+        showTovabbi(remaining);
+        remaining.forEach(function(sp){ allShownIds[sp.id] = true; });
+      }
+
+      showGroup(idx + 1);
+    }).catch(function(){
+      th.className = "msg bot";
+      th.textContent = "Hiba történt, kérlek próbáld újra.";
+      busy = false;
+      document.getElementById("go").disabled = false;
+    });
+  }
+
+  showGroup(0);
+}
+
+// Téma-szöveg rövidítése a fejléchez: először megpróbáljuk visszakeresni az eredeti
+// gombfeliratot a BTNS tömbből (pl. "Szorongás" a "Szorongással kapcsolatban..." helyett),
+// ha nem találjuk, az értéket levágjuk.
+function shortTopicLabel(t) {
+  var allBtnSets = ["tema_felno","tema_kamasz","tema_gyerek","tema_csecsemo"];
+  for(var si=0; si<allBtnSets.length; si++){
+    var items = BTNS[allBtnSets[si]] || [];
+    for(var ii=0; ii<items.length; ii++){
+      if(items[ii].v === t) return items[ii].l;
+    }
+  }
+  // Fallback: levágjuk a "kapcsolatban keresek segítséget" / "témában keresek..." részt
+  var s = t.replace(/\s*(kapcsolatban|témában)\s*(keresek|keresel|keresünk)\s*(segítséget|coaching segítséget)?\s*$/i, "").trim();
+  if(s.length > 70) s = s.slice(0,68) + "…";
+  return s.charAt(0).toUpperCase() + s.slice(1);
+}
+
+function callAI(){
+  busy = true;
+  document.getElementById("go").disabled = true;
+
+  // Ha csak EGY téma van, a régi egyszerű egységes flow fut.
+  // Ha TÖBB téma van, csoportosítjuk a találatokat témánként.
+  var realTopics = state.temak.filter(function(t){ return t.indexOf("Más témában") === -1; });
+
+  if(!freeTextSearch && realTopics.length > 1){
+    // Minden témához kiszámítjuk a jelöltlistát
+    var groups = realTopics.map(function(t){
+      return { label: shortTopicLabel(t), candidates: getCandidatesForTopic(t) };
+    });
+    // Ha mindkét lista üres, menjünk kapcsolatfelvételre
+    var totalCandidates = groups.reduce(function(sum, g){ return sum + g.candidates.length; }, 0);
+    if(totalCandidates === 0){
+      botMsg("Sajnos ezekben a témákban nem találtam hozzád illő szakembert az adatbázisunkban. Vedd fel velünk a kapcsolatot — csapatunk személyesen segít megtalálni a megfelelő szakembert.");
+      showKapcsolat();
+      busy = false;
+      document.getElementById("go").disabled = false;
+      return;
+    }
+    showGroupedResults(groups);
+    return;
+  }
+
+  // 1. Elsődleges: validált témakör-kategória egyezés (kollégák bejelölt adatlapjai alapján).
+  var categoryMatched = hasCategoryMatch(state.temak);
+  var categoryCandidates = categoryMatched ? getCandidates() : [];
+
+  if(freeTextSearch){
+    var pool = getBaseFilteredSpecialists();
+    fetchBioMatches(pool, function(bioMatches){
+      freeTextSearch = false;
+      var combined = categoryCandidates.slice();
+      bioMatches.forEach(function(sp){
+        if(combined.indexOf(sp) === -1) combined.push(sp);
+      });
+      if(combined.length === 0){
+        botMsg("Sajnos ebben a témában nem találtam hozzád illő szakembert az adatbázisunkban. Vedd fel velünk a kapcsolatot — csapatunk személyesen segít megtalálni a megfelelő szakembert.");
+        showKapcsolat();
+        busy = false;
+        document.getElementById("go").disabled = false;
+        return;
+      }
+      showFinalResults(combined);
+    });
+    return;
+  }
+
+  var buttonCandidates = getCandidates();
+  if(buttonCandidates.length === 0){
+    botMsg("Sajnos ebben a témában nem találtam hozzád illő szakembert az adatbázisunkban. Vedd fel velünk a kapcsolatot — csapatunk személyesen segít megtalálni a megfelelő szakembert.");
+    showKapcsolat();
+    busy = false;
+    document.getElementById("go").disabled = false;
+    return;
+  }
+  showFinalResults(buttonCandidates);
+}
+
+
+
+// "Tovabb talAlatok" gomb
+function showTovabbi(remaining){
+  var msgs = document.getElementById("msgs");
+  var btn = document.createElement("button");
+  btn.style.cssText = "background:#fff;border:1.5px solid #0BE7DF;border-radius:20px;padding:8px 18px;font-size:13px;color:#007A76;cursor:pointer;font-family:inherit;font-weight:500;margin:4px 0;display:block";
+  btn.textContent = "További találatok (" + remaining.length + " szakember)";
+  btn.onclick = function(){
+    btn.remove();
+    var kapac = remaining.filter(function(sp){ return hasCapacity(sp); });
+    var prio2 = remaining.filter(function(sp){ return !hasCapacity(sp) && sp.prio === 2; });
+    var prio3 = remaining.filter(function(sp){ return !hasCapacity(sp) && sp.prio !== 2; });
+    for(var i=prio3.length-1;i>0;i--){
+      var j=Math.floor(Math.random()*(i+1));
+      var tmp=prio3[i];prio3[i]=prio3[j];prio3[j]=tmp;
+    }
+    var batch = kapac.concat(prio2).concat(prio3).slice(0,3);
+    var rest = kapac.concat(prio2).concat(prio3).slice(3);
+    showCardsGrouped(batch, "more_results");
+    if(rest.length > 0){ showTovabbi(rest); }
+    else { showKapcsolat(); }
+  };
+  msgs.appendChild(btn);
+  scroll();
+}
+
+// Kapcsolat kartya
+function showKapcsolat(){
+  sendEvent('contact_shown');
+  var msgs = document.getElementById("msgs");
+  var d = document.createElement("div");
+  d.className = "card";
+  d.style.borderColor = "#00c4a1";
+  d.innerHTML = "<h4>Vedd fel velünk a kapcsolatot!</h4><div class='role'>Ha bizonytalan vagy, vagy olyan igényed van amit itt nem találtál meg, csapatunk segít eligazodni.</div><div style='margin-top:8px'><a href='https://a-hely.com/kapcsolat' target='_blank'>Kapcsolati űrlap megnyitása</a></div>";
+  msgs.appendChild(d);
+  showInputRow("Válassz vagy írj ide szabadon...");
+  scroll();
+}
+
+// Indulas
+sendEvent('session_start');
+botMsg('Szia! Segítek megtalálni a számodra legmegfelelőbb szakembert A Hely csapatából. Ehhez felteszek néhány kérdést, kérlek válaszold meg!\n\nKonkrét szakembert keresel vagy segítsek választani?');
+showBtns('start');
+</script>
+</body>
+</html>
