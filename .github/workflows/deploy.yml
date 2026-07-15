@@ -1,0 +1,26 @@
+name: Deploy ahely_v8.html to server
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'ahely_v8.html'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Deploy via SFTP
+        uses: wlixcc/SFTP-Deploy-Action@v1.2.4
+        with:
+          server: ${{ secrets.SFTP_HOST }}
+          port: ${{ secrets.SFTP_PORT }}
+          username: ${{ secrets.SFTP_USER }}
+          password: ${{ secrets.SFTP_PASSWORD }}
+          local_path: './ahely_v8.html'
+          remote_path: '/'
+          sftp_only: true
