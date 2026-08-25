@@ -1,0 +1,97 @@
+name: One-time safe capacity patch
+
+on:
+  push:
+    paths:
+      - '.github/workflows/patch-capacity-once.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    if: github.event.head_commit.message == 'Temporary safe capacity patch runner'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Patch capacity and validate chatbot
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re, sys
+
+          p = Path('ahely_v8.html')
+          s = p.read_text(encoding='utf-8')
+          old = 'var SZABAD_KAPACITAS = [9]; // 9=Oláh Imre'
+          new = 'var SZABAD_KAPACITAS = [9,15,41]; // 9=Oláh Imre, 15=Spák Brigitta, 41=Lőrincz Noémi'
+          if s.count(old) != 1:
+              sys.exit(f'FAIL: expected capacity line exactly once, found {s.count(old)}')
+          s = s.replace(old, new, 1)
+          p.write_text(s, encoding='utf-8')
+
+          # Capacity must be exactly the requested three IDs.
+          m = re.search(r'var\s+SZABAD_KAPACITAS\s*=\s*\[([^\]]*)\]', s)
+          if not m:
+              sys.exit('FAIL: SZABAD_KAPACITAS not found')
+          cap = [int(x.strip()) for x in m.group(1).split(',') if x.strip()]
+          if cap != [9,15,41]:
+              sys.exit(f'FAIL: unexpected capacity list: {cap}')
+
+          # SP integrity: exactly 32 active specialists; forbidden IDs 23 and 30 absent.
+          spm = re.search(r'var\s+SP\s*=\s*\[(.*?)\n\];\nSP\.forEach', s, re.S)
+          if not spm:
+              sys.exit('FAIL: SP array not found')
+          sp_ids = [int(x) for x in re.findall(r'\bid\s*:\s*(\d+)', spm.group(1))]
+          if len(sp_ids) != 32 or len(set(sp_ids)) != 32:
+              sys.exit(f'FAIL: SP must contain 32 unique specialists, got {len(sp_ids)} / {len(set(sp_ids))}')
+          if 23 in sp_ids or 30 in sp_ids:
+              sys.exit('FAIL: forbidden specialist ID 23 or 30 present')
+          if sp_ids.count(9) != 1:
+              sys.exit('FAIL: Oláh Imre ID 9 missing/duplicated in SP')
+
+          # Coaching map integrity: ID 9 may occur only in coaching-related keys, each exactly [9].
+          km = re.search(r'var\s+KATEGORIA_MAP\s*=\s*\{(.*?)\n\};', s, re.S)
+          if not km:
+              sys.exit('FAIL: KATEGORIA_MAP not found')
+          entries = re.findall(r'"([^"]+)"\s*:\s*\[([^\]]*)\]', km.group(1))
+          allowed = {'karrier','coaching','celkeress','celkituzes','vezeto','munkahelyi','motivacio'}
+          seen_allowed = set()
+          for key, vals in entries:
+              ids = [int(x) for x in re.findall(r'\d+', vals)]
+              if 9 in ids:
+                  if key not in allowed:
+                      sys.exit(f'FAIL: ID 9 appears in non-coaching key: {key}')
+                  if ids != [9]:
+                      sys.exit(f'FAIL: coaching key {key} must equal [9], got {ids}')
+                  seen_allowed.add(key)
+          if seen_allowed != allowed:
+              sys.exit(f'FAIL: coaching keys mismatch: {sorted(seen_allowed)}')
+
+          # Basic HTML/script boundaries.
+          if s.count('<script>') != 1 or s.count('</script>') != 1:
+              sys.exit('FAIL: unexpected script tag count')
+          script = s.split('<script>',1)[1].split('</script>',1)[0]
+          Path('/tmp/ahely-chatbot.js').write_text(script, encoding='utf-8')
+          print('VALIDATION_OK')
+          print('SP_COUNT=32')
+          print('CAPACITY_IDS=9,15,41')
+          PY
+
+          node --check /tmp/ahely-chatbot.js
+
+      - name: Commit only validated change and remove temporary workflow
+        shell: bash
+        run: |
+          rm .github/workflows/patch-capacity-once.yml
+          git config user.name 'ugry65'
+          git config user.email 'olahimre65@gmail.com'
+          git add ahely_v8.html .github/workflows/patch-capacity-once.yml
+          git diff --cached --stat
+          git diff --cached -- ahely_v8.html
+          git commit -m 'Szabad kapacitás: Oláh Imre, Spák Brigitta, Lőrincz Noémi'
+          git push origin HEAD:main
