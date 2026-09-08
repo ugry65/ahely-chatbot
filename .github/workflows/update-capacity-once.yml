@@ -1,0 +1,96 @@
+name: One-time validated capacity update
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/update-capacity-once.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  update:
+    if: github.event.head_commit.message == 'Temporary validated capacity update runner'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Patch capacity and Keul priority
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re, sys
+          p=Path('ahely_v8.html')
+          s=p.read_text(encoding='utf-8')
+          old='var SZABAD_KAPACITAS = [9,15,41]; // 9=Oláh Imre, 15=Spák Brigitta, 41=Lőrincz Noémi'
+          new='var SZABAD_KAPACITAS = [8,9,15,41,53]; // 8=Keul Andrea, 9=Oláh Imre, 15=Spák Brigitta, 41=Lőrincz Noémi, 53=Holló Mária'
+          if s.count(old)!=1:
+              sys.exit('FAIL: current capacity line differs from expected; refusing patch')
+          s=s.replace(old,new,1)
+          old_pick='''  var freeCap = candidates.filter(function(sp){ return hasCapacity(sp); });\n  var waitlist = candidates.filter(function(sp){ return !hasCapacity(sp); });\n  return freeCap.concat(waitlist.slice(0, 3));'''
+          new_pick='''  var freeCap = candidates.filter(function(sp){ return hasCapacity(sp); });\n  // Keul Andrea (id:8) mindig első a szabad kapacitású találatok között.\n  freeCap.sort(function(a,b){\n    if(a.id === 8) return -1;\n    if(b.id === 8) return 1;\n    return 0;\n  });\n  var waitlist = candidates.filter(function(sp){ return !hasCapacity(sp); });\n  return freeCap.concat(waitlist.slice(0, 3));'''
+          if s.count(old_pick)!=1:
+              sys.exit('FAIL: pickToShow block differs from expected; refusing patch')
+          s=s.replace(old_pick,new_pick,1)
+          p.write_text(s,encoding='utf-8')
+          PY
+
+      - name: Validate critical rules
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re, sys
+          s=Path('ahely_v8.html').read_text(encoding='utf-8')
+          expected='var SZABAD_KAPACITAS = [8,9,15,41,53]; // 8=Keul Andrea, 9=Oláh Imre, 15=Spák Brigitta, 41=Lőrincz Noémi, 53=Holló Mária'
+          if s.count(expected)!=1: sys.exit('FAIL capacity')
+          if 'if(a.id === 8) return -1;' not in s or 'if(b.id === 8) return 1;' not in s: sys.exit('FAIL Keul priority')
+          spm=re.search(r'var\s+SP\s*=\s*\[(.*?)\n\];\nSP\.forEach',s,re.S)
+          if not spm: sys.exit('FAIL SP block')
+          ids=[int(x) for x in re.findall(r'\bid\s*:\s*(\d+)',spm.group(1))]
+          if len(ids)!=32 or len(set(ids))!=32: sys.exit('FAIL SP count/uniqueness')
+          if 23 in ids or 30 in ids: sys.exit('FAIL forbidden IDs in SP')
+          if not all(x in ids for x in [8,9,15,41,53]): sys.exit('FAIL capacity ID absent from SP')
+          # Critical coaching map rules: known coaching keys must resolve exclusively to [9].
+          km=re.search(r'var\s+KATEGORIA_MAP\s*=\s*\{(.*?)\n\};',s,re.S)
+          if not km: sys.exit('FAIL category map')
+          entries=re.findall(r'"([^"]+)"\s*:\s*\[([^\]]*)\]',km.group(1))
+          for key,val in entries:
+              nk=key.lower()
+              if any(tok in nk for tok in ['coaching','karrier','vezeto']):
+                  nums=[int(x) for x in re.findall(r'\d+',val)]
+                  if nums != [9]: sys.exit(f'FAIL coaching key {key}: {nums}')
+          script=s.split('<script>',1)[1].split('</script>',1)[0]
+          Path('/tmp/ahely-chatbot.js').write_text(script,encoding='utf-8')
+          print('VALIDATION_OK')
+          PY
+          node --check /tmp/ahely-chatbot.js
+
+      - name: Commit validated change
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add ahely_v8.html
+          git commit -m 'Update free capacity and prioritize Keul Andrea'
+          git push origin main
+
+      - name: Install lftp
+        run: sudo apt-get install -y lftp
+
+      - name: Deploy validated file via SFTP
+        env:
+          SFTP_HOST: ${{ secrets.SFTP_HOST }}
+          SFTP_PORT: ${{ secrets.SFTP_PORT }}
+          SFTP_USER: ${{ secrets.SFTP_USER }}
+          SFTP_PASSWORD: ${{ secrets.SFTP_PASSWORD }}
+        run: |
+          lftp -u "$SFTP_USER","$SFTP_PASSWORD" -p $SFTP_PORT sftp://$SFTP_HOST << 'LFTP'
+          set sftp:auto-confirm yes
+          set net:max-retries 3
+          put ahely_v8.html -o /ahely_v8.html
+          bye
+          LFTP
