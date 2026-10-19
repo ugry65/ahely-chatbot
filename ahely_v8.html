@@ -327,7 +327,20 @@ function crisisMsg(){
   document.getElementById("msgs").appendChild(d);
   scroll();
 }
+var resultsRendering = false;
+var resultsAnchor = null;
+function scrollToResultsStart(){
+  var area = document.getElementById("scrollArea");
+  var anchor = resultsAnchor;
+  resultsRendering = false;
+  resultsAnchor = null;
+  if(!area || !anchor) return;
+  requestAnimationFrame(function(){
+    area.scrollTop += anchor.getBoundingClientRect().top - area.getBoundingClientRect().top;
+  });
+}
 function scroll(){
+  if(resultsRendering) return;
   var m = document.getElementById("scrollArea");
   var sections = document.querySelectorAll("#btns .sec");
   if(sections.length > 1){
@@ -897,6 +910,9 @@ function showFinalResults(candidates){
     th.remove();
     var txt = (data.content || []).map(function(b){ return b.text||""; }).join("");
     txt = txt.replace(/[*#_`]/g,"").replace(/---/g,"").trim();
+    resultsRendering = true;
+    resultsAnchor = document.createElement("div");
+    document.getElementById("msgs").appendChild(resultsAnchor);
     if(txt) botMsg(txt);
 
     var shownIds = toShow.map(function(sp){ return sp.id; });
@@ -918,7 +934,10 @@ function showFinalResults(candidates){
 
     busy = false;
     document.getElementById("go").disabled = false;
+    scrollToResultsStart();
   }).catch(function(){
+    resultsRendering = false;
+    resultsAnchor = null;
     th.className = "msg bot";
     th.textContent = "Hiba történt, kérlek próbáld újra.";
     busy = false;
@@ -941,6 +960,8 @@ function getCandidatesForTopic(topicText) {
 function showGroupedResults(groups) {
   // groups = [{label: "Téma szöveg röviden", candidates: [sp, ...]}, ...]
   var allShownIds = {};
+  resultsRendering = true;
+  resultsAnchor = null;
 
   function showGroup(idx) {
     if (idx >= groups.length) {
@@ -948,6 +969,7 @@ function showGroupedResults(groups) {
       showKapcsolat();
       busy = false;
       document.getElementById("go").disabled = false;
+      scrollToResultsStart();
       return;
     }
     var g = groups[idx];
@@ -984,6 +1006,7 @@ function showGroupedResults(groups) {
       header.style.cssText = "font-size:13px;font-weight:700;color:#007A76;text-transform:uppercase;letter-spacing:0.04em;padding:8px 0 2px;align-self:flex-start";
       header.textContent = g.label;
       document.getElementById("msgs").appendChild(header);
+      if(!resultsAnchor) resultsAnchor = header;
 
       var txt = (data.content || []).map(function(b){ return b.text||""; }).join("").replace(/[*#_`]/g,"").replace(/---/g,"").trim();
       if(txt) botMsg(txt);
@@ -1004,6 +1027,8 @@ function showGroupedResults(groups) {
 
       showGroup(idx + 1);
     }).catch(function(){
+      resultsRendering = false;
+      resultsAnchor = null;
       th.className = "msg bot";
       th.textContent = "Hiba történt, kérlek próbáld újra.";
       busy = false;
