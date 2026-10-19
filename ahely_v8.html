@@ -13,8 +13,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 #header-text h2{color:#fff;font-size:22px;font-weight:700;line-height:1.3}
 #header-text p{color:rgba(255,255,255,0.82);font-size:15px;margin-top:3px}
 #disclaimer{background:#fff8e1;border-bottom:1px solid #ffe082;padding:6px 16px;font-size:10.5px;color:#9a8047;line-height:1.4;flex-shrink:0}
-#scrollArea{flex:1 1 auto;min-height:150px;overflow-y:auto;scroll-behavior:auto;overflow-anchor:none;display:flex;flex-direction:column}
-#msgs{flex-shrink:0;padding:1rem;display:flex;flex-direction:column;gap:8px}
+#scrollArea{flex:1 1 auto;min-height:150px;overflow-y:auto;scroll-behavior:auto;overflow-anchor:none;display:flex;flex-direction:column;position:relative}
+#msgs{overflow-anchor:none;flex-shrink:0;padding:1rem;display:flex;flex-direction:column;gap:8px}
 .msg{max-width:88%;padding:14px 18px;border-radius:14px;font-size:17px;line-height:1.65}
 .bot{background:#f2f2f2;color:#1a1a1a;align-self:flex-start;border-bottom-left-radius:4px}
 .user{background:#0BE7DF;color:#fff;align-self:flex-end;border-bottom-right-radius:4px}
@@ -331,23 +331,29 @@ var resultsRendering = false;
 var resultsAnchor = null;
 function scrollToResultsStart(){
   var area = document.getElementById("scrollArea");
-  var anchor = resultsAnchor;
+  var msgs = document.getElementById("msgs");
+  var firstSection = msgs && msgs.querySelector(".resultSec");
+  var anchor = firstSection || resultsAnchor;
   resultsRendering = false;
   resultsAnchor = null;
   if(!area || !anchor) return;
-  // A chatbot belső görgetését azonnal állítjuk, nem animáljuk.
-  // iOS Safari esetén a kártyák utólagos méretezése miatt még egyszer rögzítjük.
-  function positionResults(){
+
+  // A belső scrollArea tartalmán belüli abszolút pozíciót használjuk.
+  // Nem a viewport-koordináták különbségét, amely iOS-en elcsúszhat.
+  function alignResults(){
     if(!anchor.isConnected) return;
-    var offset = anchor.getBoundingClientRect().top - area.getBoundingClientRect().top;
-    var target = Math.max(0, area.scrollTop + offset);
-    area.scrollTo({top:target, behavior:"instant"});
+    var target = anchor.offsetTop - area.offsetTop;
+    var node = anchor.offsetParent;
+    while(node && node !== area && node !== document.body){
+      target += node.offsetTop;
+      node = node.offsetParent;
+    }
+    area.scrollTop = Math.max(0, target - 8);
   }
-  requestAnimationFrame(function(){
-    positionResults();
-    requestAnimationFrame(positionResults);
-    setTimeout(positionResults, 350);
-  });
+  alignResults();
+  requestAnimationFrame(alignResults);
+  setTimeout(alignResults, 120);
+  setTimeout(alignResults, 500);
 }
 function scroll(){
   if(resultsRendering) return;
