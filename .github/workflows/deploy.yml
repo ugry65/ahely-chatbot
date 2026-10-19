@@ -18,21 +18,20 @@ jobs:
       - name: Install lftp
         run: sudo apt-get install -y lftp
 
-      - name: Diagnose SFTP paths (read only)
+      - name: Upload via SFTP and verify
         env:
           SFTP_HOST: ${{ secrets.SFTP_HOST }}
           SFTP_PORT: ${{ secrets.SFTP_PORT }}
           SFTP_USER: ${{ secrets.SFTP_USER }}
           SFTP_PASSWORD: ${{ secrets.SFTP_PASSWORD }}
         run: |
-          lftp -u "$SFTP_USER","$SFTP_PASSWORD" -p $SFTP_PORT sftp://$SFTP_HOST << 'LFTP'
+          set -euo pipefail
+          lftp -u "$SFTP_USER","$SFTP_PASSWORD" -p "$SFTP_PORT" "sftp://$SFTP_HOST" << 'LFTP'
           set sftp:auto-confirm yes
           set net:max-retries 3
-          pwd
-          cls -la
-          cls -la /
-          cls -la a-hely2026
-          cls -la a-hely2.com
-          cls -la chatbot
+          set cmd:fail-exit yes
+          cls -l ahely_v8.html
+          put ahely_v8.html -o ahely_v8.html
+          cls -l ahely_v8.html
           bye
           LFTP
