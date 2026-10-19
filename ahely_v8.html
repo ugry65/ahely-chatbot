@@ -1024,7 +1024,13 @@ function showGroupedResults(groups) {
         system:"Te egy empatikus szakember-ajánló asszisztens vagy. Írj 1-2 mondatos bevezető szöveget magyarul. Soha ne használj markdown formázást. Soha ne sorold fel a neveket.",
         messages:[{role:"user", content:ctx}]
       })
-    }).then(function(r){ return r.json(); }).then(function(data){
+    }).then(function(r){ if(!r.ok) throw new Error("AI HTTP " + r.status); return r.json(); }).then(function(data){
+      if(data.error) throw new Error("AI response error");
+      return data;
+    }).catch(function(err){
+      console.error("A Hely grouped AI introduction error", err);
+      return null;
+    }).then(function(data){
       th.remove();
 
       // Fejléc a csoportnak
@@ -1034,8 +1040,9 @@ function showGroupedResults(groups) {
       document.getElementById("msgs").appendChild(header);
       if(!resultsAnchor) resultsAnchor = header;
 
-      var txt = (data.content || []).map(function(b){ return b.text||""; }).join("").replace(/[*#_`]/g,"").replace(/---/g,"").trim();
+      var txt = ((data && data.content) || []).map(function(b){ return b.text||""; }).join("").replace(/[*#_`]/g,"").replace(/---/g,"").trim();
       if(txt) botMsg(txt);
+      else botMsg("A megadott témához az alábbi szakembereket ajánljuk.");
 
       // Kártyák
       var shownNow = toShow.map(function(sp){ return sp.id; });
@@ -1052,7 +1059,8 @@ function showGroupedResults(groups) {
       }
 
       showGroup(idx + 1);
-    }).catch(function(){
+    }).catch(function(err){
+      console.error("A Hely grouped recommendation rendering error", err);
       resultsRendering = false;
       resultsAnchor = null;
       th.className = "msg bot";
