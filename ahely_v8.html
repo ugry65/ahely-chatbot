@@ -1190,6 +1190,51 @@ sendEvent('session_start');
 botMsg('Szia! Segítek megtalálni a számodra legmegfelelőbb szakembert A Hely csapatából. Ehhez felteszek néhány kérdést, kérlek válaszold meg!\n\nKonkrét szakembert keresel vagy segítsek választani?');
 showBtns('start');
 </script>
+
+<!-- Temporary scroll diagnostics: remove after iPhone Safari investigation -->
+<script>
+(function(){
+  var enabled = /(?:[?&])debugscroll=1(?:&|$)/.test(location.search);
+  try { enabled = enabled || /(?:[?&])debugscroll=1(?:&|$)/.test(window.parent.location.search); } catch(e) {}
+  if(!enabled) return;
+  try {
+    var area = document.getElementById("scrollArea");
+    if(!area) return;
+    var started = Date.now();
+    var panel = document.createElement("div");
+    panel.setAttribute("role","status");
+    panel.style.cssText = "position:fixed;left:0;right:0;bottom:0;max-height:35vh;overflow:auto;z-index:2147483647;background:rgba(0,0,0,.9);color:#b9ffb9;font:11px/1.4 monospace;padding:7px;white-space:pre-wrap;pointer-events:none";
+    document.body.appendChild(panel);
+    function log(s){
+      var line = "+" + (Date.now()-started) + "ms " + s;
+      panel.textContent = line + "\n" + panel.textContent.slice(0,6000);
+      console.log("[ahely-scroll-debug]",line);
+    }
+    log("BUILD=ahely-scroll-diagnostic-20261019-v1; iframe=" + (window!==window.parent));
+    function position(){ return Math.round(area.scrollTop) + "/" + Math.round(area.scrollHeight-area.clientHeight); }
+    var last = area.scrollTop;
+    area.addEventListener("scroll",function(){
+      var now = area.scrollTop;
+      log("SCROLL inner " + Math.round(last) + " -> " + Math.round(now) + " max=" + Math.round(area.scrollHeight-area.clientHeight));
+      last=now;
+    },{passive:true});
+    window.addEventListener("scroll",function(){log("SCROLL document y=" + Math.round(window.scrollY));},{passive:true});
+    try {if(window.parent!==window)window.parent.addEventListener("scroll",function(){log("SCROLL Joomla y="+Math.round(window.parent.scrollY));},{passive:true});}catch(e){log("parent cross-origin");}
+    document.addEventListener("focusin",function(e){log("FOCUS "+(e.target.id||e.target.tagName));});
+    document.addEventListener("touchstart",function(){log("TOUCH");},{passive:true});
+    if(typeof scroll === "function"){
+      var originalScroll = scroll;
+      scroll = function(){log("CALL scroll() before="+position()+" rendering="+resultsRendering);var result=originalScroll.apply(this,arguments);log("CALL scroll() after="+position());return result;};
+    }
+    if(typeof scrollToResultsStart === "function"){
+      var originalAlign = scrollToResultsStart;
+      scrollToResultsStart = function(){log("CALL scrollToResultsStart() before="+position());return originalAlign.apply(this,arguments);};
+    }
+    if(window.visualViewport)window.visualViewport.addEventListener("resize",function(){log("visualViewport resize="+Math.round(window.visualViewport.height));});
+    log("READY inner="+position());
+  } catch(e){console.error("[ahely-scroll-debug] instrumentation failed",e);}
+})();
+</script>
 </body>
 <!-- Deployment refresh: Keul Andrea capacity and priority verified 2026-10-19 -->
 </html>
