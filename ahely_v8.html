@@ -13,7 +13,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 #header-text h2{color:#fff;font-size:22px;font-weight:700;line-height:1.3}
 #header-text p{color:rgba(255,255,255,0.82);font-size:15px;margin-top:3px}
 #disclaimer{background:#fff8e1;border-bottom:1px solid #ffe082;padding:6px 16px;font-size:10.5px;color:#9a8047;line-height:1.4;flex-shrink:0}
-#scrollArea{flex:1 1 auto;min-height:150px;overflow-y:auto;scroll-behavior:smooth;display:flex;flex-direction:column}
+#scrollArea{flex:1 1 auto;min-height:150px;overflow-y:auto;scroll-behavior:auto;overflow-anchor:none;display:flex;flex-direction:column}
 #msgs{flex-shrink:0;padding:1rem;display:flex;flex-direction:column;gap:8px}
 .msg{max-width:88%;padding:14px 18px;border-radius:14px;font-size:17px;line-height:1.65}
 .bot{background:#f2f2f2;color:#1a1a1a;align-self:flex-start;border-bottom-left-radius:4px}
@@ -335,19 +335,18 @@ function scrollToResultsStart(){
   resultsRendering = false;
   resultsAnchor = null;
   if(!area || !anchor) return;
-  // Mobilon az oldal és a chatbot külön is görgethető. A belső lista
-  // pozícióját rögzítjük, majd a külső oldalt is a chatbot elejéhez igazítjuk.
+  // A chatbot belső görgetését azonnal állítjuk, nem animáljuk.
+  // iOS Safari esetén a kártyák utólagos méretezése miatt még egyszer rögzítjük.
   function positionResults(){
+    if(!anchor.isConnected) return;
     var offset = anchor.getBoundingClientRect().top - area.getBoundingClientRect().top;
-    area.scrollTop += offset;
-    var root = document.getElementById("chatbot") || area.parentElement;
-    if(root && root.getBoundingClientRect().top < 0){
-      window.scrollBy(0, root.getBoundingClientRect().top);
-    }
+    var target = Math.max(0, area.scrollTop + offset);
+    area.scrollTo({top:target, behavior:"instant"});
   }
   requestAnimationFrame(function(){
     positionResults();
-    setTimeout(positionResults, 180);
+    requestAnimationFrame(positionResults);
+    setTimeout(positionResults, 350);
   });
 }
 function scroll(){
