@@ -6,6 +6,7 @@ on:
       - main
     paths:
       - 'ahely_v8.html'
+      - '.github/workflows/deploy.yml'
 
 jobs:
   deploy:
@@ -27,6 +28,7 @@ jobs:
           lftp -u "$SFTP_USER","$SFTP_PASSWORD" -p $SFTP_PORT sftp://$SFTP_HOST << 'LFTP'
           set sftp:auto-confirm yes
           set net:max-retries 3
-          put ahely_v8.html -o /ahely_v8.html
+          put ahely_v8.html -o /a-hely2026/ahely_v8.html
+          cls -l /a-hely2026/ahely_v8.html
           bye
           LFTP
