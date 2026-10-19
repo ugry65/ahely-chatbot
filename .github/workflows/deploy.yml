@@ -18,7 +18,7 @@ jobs:
       - name: Install lftp
         run: sudo apt-get install -y lftp
 
-      - name: Upload via SFTP
+      - name: Diagnose SFTP paths (read only)
         env:
           SFTP_HOST: ${{ secrets.SFTP_HOST }}
           SFTP_PORT: ${{ secrets.SFTP_PORT }}
@@ -28,7 +28,11 @@ jobs:
           lftp -u "$SFTP_USER","$SFTP_PASSWORD" -p $SFTP_PORT sftp://$SFTP_HOST << 'LFTP'
           set sftp:auto-confirm yes
           set net:max-retries 3
-          put ahely_v8.html -o /a-hely2026/ahely_v8.html
-          cls -l /a-hely2026/ahely_v8.html
+          pwd
+          cls -la
+          cls -la /
+          cls -la a-hely2026
+          cls -la a-hely2.com
+          cls -la chatbot
           bye
           LFTP
