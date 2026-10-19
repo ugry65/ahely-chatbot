@@ -335,8 +335,19 @@ function scrollToResultsStart(){
   resultsRendering = false;
   resultsAnchor = null;
   if(!area || !anchor) return;
+  // Mobilon az oldal és a chatbot külön is görgethető. A belső lista
+  // pozícióját rögzítjük, majd a külső oldalt is a chatbot elejéhez igazítjuk.
+  function positionResults(){
+    var offset = anchor.getBoundingClientRect().top - area.getBoundingClientRect().top;
+    area.scrollTop += offset;
+    var root = document.getElementById("chatbot") || area.parentElement;
+    if(root && root.getBoundingClientRect().top < 0){
+      window.scrollBy(0, root.getBoundingClientRect().top);
+    }
+  }
   requestAnimationFrame(function(){
-    area.scrollTop += anchor.getBoundingClientRect().top - area.getBoundingClientRect().top;
+    positionResults();
+    setTimeout(positionResults, 180);
   });
 }
 function scroll(){
