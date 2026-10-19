@@ -907,6 +907,28 @@ function showFinalResults(candidates){
   var th = botMsg("Gondolkodom");
   th.className = "msg thinking";
 
+  function renderResults(data){
+    th.remove();
+    var txt = (data && data.content || []).map(function(b){ return b.text||""; }).join("");
+    txt = txt.replace(/[*#_`]/g,"").replace(/---/g,"").trim();
+    resultsRendering = true;
+    resultsAnchor = document.createElement("div");
+    document.getElementById("msgs").appendChild(resultsAnchor);
+    if(txt) botMsg(txt);
+    else botMsg("Az alábbi szakembereket ajánljuk a megadott szempontok alapján.");
+    renderCards();
+  }
+  function renderCards(){
+    var shownIds = toShow.map(function(sp){ return sp.id; });
+    sendEvent("recommendation_shown", {kor:state.kor, temak:state.temak, shown:toShow.map(function(sp){return sp.n;})});
+    showCardsGrouped(toShow, "recommendation");
+    botMsg("Az asszisztens nem ad diagnózist, és nem helyettesíti a pszichológiai, orvosi vagy sürgősségi ellátást.");
+    var remaining = lastCandidates.filter(function(sp){return shownIds.indexOf(sp.id)===-1;});
+    if(remaining.length) showTovabbi(remaining); else showKapcsolat();
+    busy=false;
+    document.getElementById("go").disabled=false;
+    scrollToResultsStart();
+  }
   fetch("https://a-hely.com/proxy.php", {
     method:"POST",
     headers:{"Content-Type":"application/json"},
@@ -916,42 +938,30 @@ function showFinalResults(candidates){
       system:"Te egy empatikus szakember-ajánló asszisztens vagy. Írj rövid bevezető szöveget magyarul. Soha ne használj markdown formázást. Soha ne sorold fel a neveket. Csak 2-3 mondatos empatikus szöveg.",
       messages:[{role:"user", content:ctx}]
     })
-  }).then(function(r){ return r.json(); }).then(function(data){
-    th.remove();
-    var txt = (data.content || []).map(function(b){ return b.text||""; }).join("");
-    txt = txt.replace(/[*#_`]/g,"").replace(/---/g,"").trim();
-    resultsRendering = true;
-    resultsAnchor = document.createElement("div");
-    document.getElementById("msgs").appendChild(resultsAnchor);
-    if(txt) botMsg(txt);
-
-    var shownIds = toShow.map(function(sp){ return sp.id; });
-    sendEvent('recommendation_shown', {kor:state.kor, temak:state.temak, shown: shownIds.map(function(id){
-      var sp = SP.find(function(s){ return s.id === id; }); return sp ? sp.n : id;
-    })});
-    showCardsGrouped(toShow, "recommendation");
-
-    botMsg("Az asszisztens nem ad diagnózist, és nem helyettesíti a pszichológiai, orvosi vagy sürgősségi ellátást.");
-
-    var remaining = lastCandidates.filter(function(sp){
-      return shownIds.indexOf(sp.id) === -1;
-    });
-    if(remaining.length > 0){
-      showTovabbi(remaining);
-    } else {
-      showKapcsolat();
+  }).then(function(r){ if(!r.ok) throw new Error("AI HTTP " + r.status); return r.json(); }).then(function(data){
+    if(data.error) throw new Error("AI response error");
+    renderResults(data);
+  }).catch(function(err){
+    console.error("A Hely AI introduction error", err);
+    if(resultsRendering){
+      resultsRendering = false;
+      resultsAnchor = null;
+      th.className = "msg bot";
+      th.textContent = "A találatok megjelenítése nem sikerült. Kérlek, indíts új keresést.";
+      busy = false;
+      document.getElementById("go").disabled = false;
+      return;
     }
-
-    busy = false;
-    document.getElementById("go").disabled = false;
-    scrollToResultsStart();
-  }).catch(function(){
-    resultsRendering = false;
-    resultsAnchor = null;
-    th.className = "msg bot";
-    th.textContent = "Hiba történt, kérlek próbáld újra.";
-    busy = false;
-    document.getElementById("go").disabled = false;
+    try { renderResults(null); }
+    catch(renderError){
+      console.error("A Hely rendering error", renderError);
+      resultsRendering = false;
+      resultsAnchor = null;
+      th.className = "msg bot";
+      th.textContent = "A találatok megjelenítése nem sikerült. Kérlek, indíts új keresést.";
+      busy = false;
+      document.getElementById("go").disabled = false;
+    }
   });
 }
 
