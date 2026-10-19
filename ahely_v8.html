@@ -331,29 +331,23 @@ var resultsRendering = false;
 var resultsAnchor = null;
 function scrollToResultsStart(){
   var area = document.getElementById("scrollArea");
-  var msgs = document.getElementById("msgs");
-  var firstSection = msgs && msgs.querySelector(".resultSec");
-  var anchor = firstSection || resultsAnchor;
-  resultsRendering = false;
-  resultsAnchor = null;
-  if(!area || !anchor) return;
-
-  // A belső scrollArea tartalmán belüli abszolút pozíciót használjuk.
-  // Nem a viewport-koordináták különbségét, amely iOS-en elcsúszhat.
+  var anchor = resultsAnchor;
+  if(!area || !anchor){ resultsRendering=false; resultsAnchor=null; return; }
+  // A tartalom teljes felépülése után a legelső ajánlásra pozicionálunk.
+  // Az offsetet a görgethető elem koordinátarendszerében számoljuk.
   function alignResults(){
     if(!anchor.isConnected) return;
-    var target = anchor.offsetTop - area.offsetTop;
-    var node = anchor.offsetParent;
-    while(node && node !== area && node !== document.body){
-      target += node.offsetTop;
-      node = node.offsetParent;
-    }
+    var target = area.scrollTop + anchor.getBoundingClientRect().top - area.getBoundingClientRect().top;
     area.scrollTop = Math.max(0, target - 8);
   }
   alignResults();
   requestAnimationFrame(alignResults);
-  setTimeout(alignResults, 120);
-  setTimeout(alignResults, 500);
+  setTimeout(alignResults, 180);
+  setTimeout(function(){
+    alignResults();
+    resultsRendering=false;
+    resultsAnchor=null;
+  }, 650);
 }
 function scroll(){
   if(resultsRendering) return;
