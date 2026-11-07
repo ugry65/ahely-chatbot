@@ -575,6 +575,7 @@ function pick(lbl, val){
     if(val === "coach"){
       step = 6;
       botMsg("Tökéletes! Coaching területen az A Hely csapatából elsősorban ajánlom:");
+      showBookingInfo();
       showCard(SP[1], "coach"); // Oláh Imre
       botMsg("Az asszisztens nem ad diagnózist, és nem helyettesíti a pszichológiai, orvosi vagy sürgősségi ellátást.\n\nHa bizonytalan vagy, vedd fel velünk a kapcsolatot: https://a-hely.com/kapcsolat");
       showInputRow("Válassz vagy írj ide szabadon...");
@@ -712,6 +713,7 @@ var KATEGORIA_MAP = {
   "vezeto":          [9],
   "munkahelyi":      [9],
   "motivacio":       [9],
+  "munka-maganelet": [9],
 };
 
 function specialistMatchesKor(sp, kor){
@@ -726,35 +728,38 @@ function specialistMatchesKor(sp, kor){
   return true;
 }
 
+function categoryKeysForTopics(temak){
+  var result = {};
+  temak.forEach(function(t){
+    var text = t.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");
+    // A konkrétan választott témák előnyt élveznek a részszavas egyezésekkel szemben.
+    // Pl. az LMBTQ témát ne bővítsük minden szexuálpszichológiai találatra.
+    var exact = null;
+    if(text.indexOf("lmbtq") !== -1) exact = ["lmbtq"];
+    else if(text.indexOf("szulo-gyermek") !== -1) exact = ["szulo-gyermek"];
+    else if(text.indexOf("munka-maganelet") !== -1) exact = ["munka-maganelet"];
+    else if(text.indexOf("szulo-csecsemo") !== -1) exact = ["csecsemo"];
+    var keys = exact || Object.keys(KATEGORIA_MAP).filter(function(k){
+      return text.indexOf(k) !== -1;
+    });
+    keys.forEach(function(k){ result[k] = true; });
+  });
+  return Object.keys(result);
+}
 function hasCategoryMatch(temak){
-  var temakNorm = temak.map(function(t){
-    return t.toLowerCase()
-      .replace(/á/g,"a").replace(/é/g,"e").replace(/í/g,"i")
-      .replace(/ó/g,"o").replace(/ö/g,"o").replace(/ő/g,"o")
-      .replace(/ú/g,"u").replace(/ü/g,"u").replace(/ű/g,"u");
-  }).join(" ");
-  return Object.keys(KATEGORIA_MAP).some(function(k){ return temakNorm.indexOf(k) > -1; });
+  return categoryKeysForTopics(temak).length > 0;
 }
 
 function getCandidates() {
-  var temakNorm = state.temak.map(function(t){
-    return t.toLowerCase()
-      .replace(/á/g,"a").replace(/é/g,"e").replace(/í/g,"i")
-      .replace(/ó/g,"o").replace(/ö/g,"o").replace(/ő/g,"o")
-      .replace(/ú/g,"u").replace(/ü/g,"u").replace(/ű/g,"u");
-  }).join(" ");
-
   var idSet = {};
-  Object.keys(KATEGORIA_MAP).forEach(function(k){
-    if(temakNorm.indexOf(k) > -1){
-      KATEGORIA_MAP[k].forEach(function(id){ idSet[id] = true; });
-    }
+  categoryKeysForTopics(state.temak).forEach(function(k){
+    KATEGORIA_MAP[k].forEach(function(id){ idSet[id] = true; });
   });
 
   var ids = Object.keys(idSet).map(Number);
-  if(ids.length === 0){
-    ids = SP.filter(function(s){ return s.t !== "coach"; }).map(function(s){ return s.id; });
-  }
+  // Ismeretlen témakörnél ne ajánljunk automatikusan minden szakembert.
+  // A szabadszöveges keresés külön, ellenőrzött útvonalon működik.
+  if(ids.length === 0) return [];
 
   // KÖTELEZŐ: Korcsoport szűrés - mindig fut, sosem hagyható ki
   ids = ids.filter(function(id){
@@ -764,11 +769,12 @@ function getCandidates() {
 
   // Végzettség szűrés - szintén kötelező, nem írható felül
   var tipusFilter = state.vegzettseg;
-  if(tipusFilter && tipusFilter !== "mindegy" && tipusFilter !== "coach"){
+  if(tipusFilter && tipusFilter !== "mindegy"){
     ids = ids.filter(function(id){
       var sp = SP.find(function(s){ return s.id === id; });
       if(!sp) return false;
       if(tipusFilter === "klinikai") return sp.t === "klinikai";
+      if(tipusFilter === "coach") return sp.t === "coach";
       if(tipusFilter === "pszichoterapeuta") return sp.t === "pszichoterapeuta";
       if(tipusFilter === "pszichologus") return sp.t !== "coach";
       return true;
@@ -784,23 +790,8 @@ function getCandidates() {
     });
   }
 
-  // Ha a szigorú szűrés után KEVÉS marad (de legalább 1), bővítjük csak a témakör-relevánsak közül,
-  // a kor és végzettség szűrést sosem engedjük el
-  if(ids.length < 3){
-    var allTemaIds = Object.keys(idSet).map(Number);
-    var bovitett = allTemaIds.filter(function(id){
-      var sp = SP.find(function(s){ return s.id === id; });
-      if(!sp) return false;
-      // Kor szűrés MINDIG kötelező marad
-      if(!specialistMatchesKor(sp, state.kor)) return false;
-      // Végzettség szűrést itt enyhítjük (csak akkor, ha nem coach-ot kerestek)
-      if(tipusFilter === "coach") return sp.t === "coach";
-      return true;
-    });
-    if(bovitett.length > ids.length){
-      ids = bovitett;
-    }
-  }
+  // A végzettség, korcsoport és nem kötelező szűrő. Kevés találat esetén
+  // sem lazítható fel egyik sem: inkább kevesebb vagy nulla találatot mutatunk.
 
   var candidates = ids.map(function(id){
     return SP.find(function(s){ return s.id === id; });
@@ -835,11 +826,12 @@ function getBaseFilteredSpecialists(){
     return sp && specialistMatchesKor(sp, state.kor);
   });
   var tipusFilter = state.vegzettseg;
-  if(tipusFilter && tipusFilter !== "mindegy" && tipusFilter !== "coach"){
+  if(tipusFilter && tipusFilter !== "mindegy"){
     ids = ids.filter(function(id){
       var sp = SP.find(function(s){ return s.id === id; });
       if(!sp) return false;
       if(tipusFilter === "klinikai") return sp.t === "klinikai";
+      if(tipusFilter === "coach") return sp.t === "coach";
       if(tipusFilter === "pszichoterapeuta") return sp.t === "pszichoterapeuta";
       if(tipusFilter === "pszichologus") return sp.t !== "coach";
       return true;
@@ -896,6 +888,9 @@ function fetchBioMatches(pool, onDone){
 
 // A végső találatok megjelenítése - bevezető szöveg + kártyák + felelősségi nyilatkozat +
 // "további találatok" vagy kapcsolat kártya. Közös a kategória- és a bio-alapú találatoknak.
+function showBookingInfo(){
+  botMsg("Időpontot közvetlenül a választott szakembernél tudsz egyeztetni. Kattints a „Profil megtekintése” gombra, ahol megtalálod a szakember telefonszámát és e-mail-címét, majd vedd fel vele a kapcsolatot időpontfoglalás céljából.");
+}
 function showFinalResults(candidates){
   lastCandidates = candidates;
   lastRecommended = [];
@@ -906,6 +901,7 @@ function showFinalResults(candidates){
   try {
     var shownIds = toShow.map(function(sp){ return sp.id; });
     sendEvent("recommendation_shown", {kor:state.kor, temak:state.temak, shown:toShow.map(function(sp){return sp.n;})});
+    showBookingInfo();
     showCardsGrouped(toShow, "recommendation");
     botMsg("Az asszisztens nem ad diagnózist, és nem helyettesíti a pszichológiai, orvosi vagy sürgősségi ellátást.");
     var remaining = lastCandidates.filter(function(sp){return shownIds.indexOf(sp.id)===-1;});
@@ -946,6 +942,11 @@ function showGroupedResults(groups) {
         return;
       }
       var toShow = pickToShow(g.candidates);
+      if(!resultsAnchor){
+        resultsAnchor = document.createElement("div");
+        document.getElementById("msgs").appendChild(resultsAnchor);
+        showBookingInfo();
+      }
       var header = document.createElement("div");
       header.style.cssText = "font-size:13px;font-weight:700;color:#007A76;text-transform:uppercase;letter-spacing:0.04em;padding:8px 0 2px;align-self:flex-start";
       header.textContent = g.label;
