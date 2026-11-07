@@ -611,8 +611,8 @@ function pick(lbl, val){
       step = 6;
       botMsg("Tökéletes! Coaching területen az A Hely csapatából elsősorban ajánlom:");
       showBookingInfo();
-      markRecommendationReady();
-      showCard(SP[1], "coach"); // Oláh Imre
+      showCard(SP[1], "coach");
+      markRecommendationReady(); // Oláh Imre
       botMsg("Ha bizonytalan vagy, vedd fel velünk a kapcsolatot: https://a-hely.com/kapcsolat");
       showInputRow("Válassz vagy írj ide szabadon...");
       scroll();
@@ -936,10 +936,10 @@ function showFinalResults(candidates){
   document.getElementById("msgs").appendChild(resultsAnchor);
   try {
     var shownIds = toShow.map(function(sp){ return sp.id; });
-    markRecommendationReady();
     sendEvent("recommendation_shown", {kor:state.kor, temak:state.temak, shown:toShow.map(function(sp){return sp.n;})});
     showBookingInfo();
     showCardsGrouped(toShow, "recommendation");
+    markRecommendationReady();
     var remaining = lastCandidates.filter(function(sp){return shownIds.indexOf(sp.id)===-1;});
     if(remaining.length) showTovabbi(remaining); else showKapcsolat();
     busy = false;
@@ -989,9 +989,9 @@ function showGroupedResults(groups) {
       document.getElementById("msgs").appendChild(header);
       if(!resultsAnchor) resultsAnchor = header;
       var shownNow = toShow.map(function(sp){ return sp.id; });
-      markRecommendationReady();
       sendEvent('recommendation_shown', {kor:state.kor, temak:[g.label], shown:toShow.map(function(sp){return sp.n;})});
       showCardsGrouped(toShow, "grouped_recommendation", function(sp){ allShownIds[sp.id] = true; });
+      markRecommendationReady();
       var remaining = g.candidates.filter(function(sp){ return shownNow.indexOf(sp.id) === -1; });
       if(remaining.length > 0){
         showTovabbi(remaining);
