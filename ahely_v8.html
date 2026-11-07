@@ -236,7 +236,7 @@ var state = {kor:null, vegzettseg:null, nem:null, forma:null, temak:[]};
 var freeTextSearch = false;
 var lastRecommended = []; // utoljára ajánlott szakemberek ID-i
 var lastCandidates = []; // összes releváns jelölt az utolsó keresésből
-var step = 0; // 0=start, 1=kor, 2=vegzettseg, 3=nem, 4=forma, 5=tema, 6=kesz, -1=nevkereses
+var step = 0; // 0=start, 1=kor, 5=tema, 6=kesz, -1=nevkereses (egyszerűsített folyamat)
 var selectedTopics = [];
 var busy = false;
 
@@ -587,7 +587,7 @@ function sendTopics(){
 // Lépéskezelő
 function pick(lbl, val){
   if(step === 0) beginSearch(val === 'konkret' ? 'name' : 'guided');
-  sendEvent('step', {step:step, value:val, measurement_version:2});
+  sendEvent('step', {step:step, value:val, measurement_version:3});
   userMsg(lbl);
   hideBtns();
   if(step === 0){
@@ -597,39 +597,16 @@ function pick(lbl, val){
       showInputRow("Írd be a szakember nevét...");
     } else {
       step = 1;
-      botMsg("1. Milyen korú személynek keresel segítséget?");
+      botMsg("1. Kinek keresel segítséget?");
       showBtns("kor");
     }
   } else if(step === 1){
     state.kor = val;
-    step = 2;
-    botMsg("2. Milyen típusú szakembert keresel? Pszichológust, vagy inkább egy coachot, aki az élethelyzeteddel, karrierrel, céljaiddal foglalkozik?");
-    showBtns("vegzettseg");
-  } else if(step === 2){
-    state.vegzettseg = val;
-    if(val === "coach"){
-      step = 6;
-      botMsg("Tökéletes! Coaching területen az A Hely csapatából elsősorban ajánlom:");
-      showBookingInfo();
-      showCard(SP[1], "coach");
-      markRecommendationReady(); // Oláh Imre
-      botMsg("Ha bizonytalan vagy, vedd fel velünk a kapcsolatot: https://a-hely.com/kapcsolat");
-      showInputRow("Válassz vagy írj ide szabadon...");
-      scroll();
-    } else {
-      step = 3;
-      botMsg("3. Van-e preferenciád a szakember neme tekintetében?");
-      showBtns("nem");
-    }
-  } else if(step === 3){
-    state.nem = val;
-    step = 4;
-    botMsg("4. Szeretnél személyesen találkozni valakivel, vagy inkább online konzultációt részesítesz előnyben?");
-    showBtns("forma");
-  } else if(step === 4){
-    state.forma = val;
+    state.vegzettseg = "mindegy";
+    state.nem = "mindegy";
+    state.forma = "mindegy";
     step = 5;
-    botMsg("5. Milyen témával szeretnél foglalkozni egy szakemberrel? Mit érzel, hogy most milyen segítségre lenne szükséged?");
+    botMsg("2. Milyen problémával kapcsolatban keresel segítséget? Több témát is kiválaszthatsz.");
     var tkey = {felno:"tema_felno",kamasz:"tema_kamasz",gyerek:"tema_gyerek",kiskoru:"tema_gyerek",csecsemo:"tema_csecsemo"}[state.kor] || "tema_felno";
     showBtns(tkey, true);
   }
