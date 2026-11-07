@@ -193,6 +193,35 @@ function findSP(txt){
 // Állapot
 // --- Statisztika naplózás ---
 var SESSION_ID = 'sid_' + Date.now() + '_' + Math.random().toString(36).slice(2,10);
+var searchStarted = false;
+var recommendationTracked = false;
+var viewedCards = {};
+function beginSearch(method){
+  if(searchStarted) return;
+  searchStarted = true;
+  sendEvent('session_start', {method:method, measurement_version:2});
+}
+function markRecommendationReady(){
+  if(recommendationTracked) return;
+  recommendationTracked = true;
+  sendEvent('recommendation_ready', {kor:state.kor, topics_count:state.temak.length, measurement_version:2});
+}
+function observeSpecialistCard(card, specialist, context){
+  if(!('IntersectionObserver' in window)) return;
+  var observer = new IntersectionObserver(function(entries){
+    entries.forEach(function(entry){
+      if(!entry.isIntersecting || entry.intersectionRatio < 0.5) return;
+      var key = String(specialist.id);
+      if(!viewedCards[key]){
+        viewedCards[key] = true;
+        sendEvent('specialist_card_viewed', {id:specialist.id, name:specialist.n, context:context || 'unknown', measurement_version:2});
+      }
+      observer.unobserve(card);
+      observer.disconnect();
+    });
+  }, {root:document.getElementById('scrollArea'), threshold:[0.5]});
+  observer.observe(card);
+}
 function sendEvent(eventType, eventData){
   try{
     fetch("https://a-hely.com/log.php", {
@@ -364,7 +393,8 @@ function scroll(){
 }
 
 function showCard(sp, context){
-  sendEvent('recommendation_shown_card', {name:sp.n, context: context || 'unknown'});
+  // Legacy event: card rendered, not necessarily viewed. Keep for old dashboard compatibility.
+  sendEvent('recommendation_shown_card', {name:sp.n, context: context || 'unknown', measurement_version:2});
   var tags = sp.s.split(",").map(function(t){ return t.trim(); }).filter(Boolean);
   var d = document.createElement("div");
   d.className = "card";
@@ -384,6 +414,7 @@ function showCard(sp, context){
     : "<span class='cap-badge cap-wait'>Várólista lehetséges</span>";
   d.innerHTML = "<div style='display:flex;gap:12px;align-items:flex-start'>"+imgHtml+"<div style='flex:1'><h4>"+sp.n+"</h4><div class='role'>"+sp.r+"</div>"+capBadge+"<div class='tags'>"+tags.map(function(t){ return "<span class='tag'>"+t+"</span>"; }).join("")+"</div><a href='"+sp.url+"' target='_blank'>Profil megtekintése</a></div></div>";
   document.getElementById("msgs").appendChild(d);
+  observeSpecialistCard(d, sp, context);
   var profileLink = d.querySelector("a");
   if(profileLink){
     profileLink.addEventListener("click", function(){
@@ -511,7 +542,10 @@ function restart(){
   document.getElementById("msgs").innerHTML = "";
   hideBtns();
   SESSION_ID = 'sid_' + Date.now() + '_' + Math.random().toString(36).slice(2,10);
-  sendEvent('session_start', {restarted:true});
+  searchStarted = false;
+  recommendationTracked = false;
+  viewedCards = {};
+  sendEvent('search_reset', {measurement_version:2});
   botMsg("Újraindítottam a keresést! Keresel már konkrét szakembert, vagy segítsek választani?");
   showBtns("start");
 }
@@ -552,7 +586,8 @@ function sendTopics(){
 
 // Lépéskezelő
 function pick(lbl, val){
-  sendEvent('step', {step:step, value:val});
+  if(step === 0) beginSearch(val === 'konkret' ? 'name' : 'guided');
+  sendEvent('step', {step:step, value:val, measurement_version:2});
   userMsg(lbl);
   hideBtns();
   if(step === 0){
@@ -576,6 +611,7 @@ function pick(lbl, val){
       step = 6;
       botMsg("Tökéletes! Coaching területen az A Hely csapatából elsősorban ajánlom:");
       showBookingInfo();
+      markRecommendationReady();
       showCard(SP[1], "coach"); // Oláh Imre
       botMsg("Ha bizonytalan vagy, vedd fel velünk a kapcsolatot: https://a-hely.com/kapcsolat");
       showInputRow("Válassz vagy írj ide szabadon...");
@@ -900,6 +936,7 @@ function showFinalResults(candidates){
   document.getElementById("msgs").appendChild(resultsAnchor);
   try {
     var shownIds = toShow.map(function(sp){ return sp.id; });
+    markRecommendationReady();
     sendEvent("recommendation_shown", {kor:state.kor, temak:state.temak, shown:toShow.map(function(sp){return sp.n;})});
     showBookingInfo();
     showCardsGrouped(toShow, "recommendation");
@@ -952,6 +989,7 @@ function showGroupedResults(groups) {
       document.getElementById("msgs").appendChild(header);
       if(!resultsAnchor) resultsAnchor = header;
       var shownNow = toShow.map(function(sp){ return sp.id; });
+      markRecommendationReady();
       sendEvent('recommendation_shown', {kor:state.kor, temak:[g.label], shown:toShow.map(function(sp){return sp.n;})});
       showCardsGrouped(toShow, "grouped_recommendation", function(sp){ allShownIds[sp.id] = true; });
       var remaining = g.candidates.filter(function(sp){ return shownNow.indexOf(sp.id) === -1; });
@@ -1093,7 +1131,7 @@ function showKapcsolat(){
 }
 
 // Indulas
-sendEvent('session_start');
+sendEvent('chatbot_loaded', {measurement_version:2});
 botMsg('Szia! Segítek megtalálni a számodra legmegfelelőbb szakembert A Hely csapatából. Ehhez felteszek néhány kérdést, kérlek válaszold meg!\n\nKonkrét szakembert keresel vagy segítsek választani?');
 showBtns('start');
 </script>
