@@ -37,8 +37,11 @@ if not mapping:
 section = html[mapping.end():]
 section = section[:section.find("\n};")]
 coaching = {"karrier","coaching","celkeress","celkituzes","vezeto","munkahelyi","motivacio"}
-for key, values in re.findall(r"\b([a-zA-Z_][\w]*)\s*:\s*\[([^\]]*)\]", section):
+found_coaching = set()
+for key, values in re.findall(r"""["']?([a-zA-Z_][\w]*)["']?\s*:\s*\[([^\]]*)\]""", section):
     members = [int(x) for x in re.findall(r"\d+", values)]
+    if key in coaching:
+        found_coaching.add(key)
     if key in coaching and members != [9]:
         fail(f"Coaching key {key} must equal [9]")
     if key not in coaching and 9 in members:
@@ -50,4 +53,6 @@ if os.environ.get("GITHUB_EVENT_NAME") == "pull_request":
         fail("Every PR must update docs/CHANGELOG.md")
     if changed and not any(re.search(r"^\+## CHB-\d{8}-\d{2} – ", line) for line in git("diff", "--unified=0", f"origin/{base}...HEAD", "--", "docs/CHANGELOG.md").splitlines()):
         fail("CHANGELOG must contain a NEW dated entry in this PR")
+if found_coaching != coaching:
+    fail(f"Missing coaching keys: {sorted(coaching - found_coaching)}")
 print("Mandatory changelog and critical data checks passed")
