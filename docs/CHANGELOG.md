@@ -19,3 +19,12 @@ Megjegyzés: a korábbi, különálló #1 PR (kötelező naplózás és általá
 A #2 PR összevonása (`39d64ac`) után indult `43038948767` feltöltés az lftp rendszercsomag telepítésénél hibával leállt: az Ubuntu csomagtárainak DNS-feloldása sikertelen volt (exit 100). A külön javítás Ubuntu 24.04-re rögzíti a futtatógépet, és annak előtelepített `sshpass` + OpenSSH `sftp` eszközét használja azonos GitHub SFTP-titkokkal és azonos távoli fájlnévvel. A jelszó környezeti változóban kerül átadásra. Az SFTP batch hibánál leáll; a kapcsolódás és a teljes futás időkorlátot kapott. Nem változik a kiszolgált HTML. Az éles feltöltést és a nyilvános oldal működését ezután újra ellenőrizni kell.
 
 A #3 PR első feltöltési próbája (`43039512104`) már elérte a tárhelyet, de a batch opció sorrendje miatt a jelszavas belépés letiltva maradt. Az OpenSSH elsőként megadott értéket használ; ezért a `-oBatchMode=no` opciónak meg kell előznie a `-b -` opciót. A követő javítás ezt a sorrendet helyesbíti, hitelesítő adat módosítása nélkül.
+
+### Igazolt végeredmény – 2026-11-11
+
+- Keresőjavítás: #2 PR. Feltöltési környezet: #3 és #4 PR.
+- Távoli böngészős tesztek: `43038740512`, sikeres; helyben a Chromium és a Chrome futás is 20/20 sikeres.
+- Éles SFTP-feltöltés: `43039840527`, sikeres. Élesítési commit: `70d02e2325b006c0b9cb4892bf3c58e0d9b2fc0c`.
+- Az élő `ahely_v8.html` a tesztelt forrással egyezik (CRLF és záró whitespace normalizálása után). SHA-256: `251e4ace6b2fbc47e59d93e4f782501d0c9a78ef582a78dad5e1b1cc5bee54c0`.
+- Az éles Joomla-oldal iframe-jében Chromium asztali és mobil emulációban sikeres: „k” 14 találat → „ke” 1 találat; „keol” → Keul Andrea kiválasztása; „olah” → Oláh Imre kiválasztása; ismételt keresés; újraindítás.
+- A változtatás éles, a feltöltési hozzáférés működik. A korábbi #1 általános minőségkapu PR továbbra is külön, nyitott munka.
