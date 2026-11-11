@@ -448,6 +448,31 @@ function loadHelgaPhoto(onDone){
     onDone(null);
   });
 }
+// Publikus telefonszámok a saját munkatársi adatlapokról, kártyánként gyorsítótárazva.
+// Csak az adott profil tartalmában megadott, egyértelmű telefonszámot jelenítjük meg.
+var specialistPhoneRequests = {};
+function loadSpecialistPhone(sp, onDone){
+  if(!specialistPhoneRequests[sp.id]){
+    specialistPhoneRequests[sp.id] = fetch(sp.url, {credentials:"same-origin"})
+      .then(function(res){ if(!res.ok) throw new Error("Adatlap nem elérhető"); return res.text(); })
+      .then(function(html){
+        var doc = new DOMParser().parseFromString(html,"text/html");
+        var root = doc.querySelector(".com-content-article, .item-page, article[itemprop='articleBody'], .article-body, main article, main");
+        if(!root) return null;
+        root.querySelectorAll("header, footer, nav, aside, script, style, form").forEach(function(el){el.remove();});
+        var telLinks = Array.from(root.querySelectorAll("a[href^='tel:']")).map(function(a){
+          return (a.textContent || a.getAttribute("href").slice(4)).trim();
+        }).filter(function(n){ return /^[+0-9\s()\-./]{9,30}$/.test(n) && n.replace(/\D/g,"").length>=9; });
+        var unique = telLinks.filter(function(n,i){return telLinks.indexOf(n)===i;});
+        if(unique.length===1) return unique[0];
+        if(unique.length>1) return null; // Ne találgassunk több szám között.
+        var bodyText = root.textContent.replace(/\s+/g," ");
+        var match = bodyText.match(/(?:telefon(?:szám)?|mobil(?:telefon)?|tel\.?|hívható)\s*[:：]?\s*(\+?\d[\d\s()\-./]{7,24}\d)/i);
+        return match && match[1].replace(/\D/g,"").length>=9 ? match[1].trim() : null;
+      }).catch(function(){return null;});
+  }
+  specialistPhoneRequests[sp.id].then(onDone);
+}
 function showCard(sp, context){
   // Legacy event: card rendered, not necessarily viewed. Keep for old dashboard compatibility.
   sendEvent('recommendation_shown_card', {name:sp.n, context: context || 'unknown', measurement_version:2});
@@ -468,8 +493,19 @@ function showCard(sp, context){
   var capBadge = hasCapacity(sp)
     ? "<span class='cap-badge cap-free'>Szabad kapacitással rendelkezik</span>"
     : "<span class='cap-badge cap-wait'>Várólista lehetséges</span>";
-  d.innerHTML = "<div style='display:flex;gap:12px;align-items:flex-start'>"+imgHtml+"<div style='flex:1'><h4>"+sp.n+"</h4><div class='role'>"+sp.r+"</div>"+capBadge+"<div class='tags'>"+tags.map(function(t){ return "<span class='tag'>"+t+"</span>"; }).join("")+"</div><a href='"+sp.url+"' target='_blank'>"+"Profil megtekintése"+"</a></div></div>";
+  d.innerHTML = "<div style='display:flex;gap:12px;align-items:flex-start'>"+imgHtml+"<div style='flex:1'><h4>"+sp.n+"</h4><div class='role'>"+sp.r+"</div><div class='specialist-phone'></div>"+capBadge+"<div class='tags'>"+tags.map(function(t){ return "<span class='tag'>"+t+"</span>"; }).join("")+"</div><a href='"+sp.url+"' target='_blank'>"+"Profil megtekintése"+"</a></div></div>";
   document.getElementById("msgs").appendChild(d);
+  loadSpecialistPhone(sp, function(phone){
+    if(!phone || !d.isConnected) return;
+    var slot = d.querySelector(".specialist-phone");
+    if(!slot) return;
+    var link = document.createElement("a");
+    link.href = "tel:" + phone.replace(/[^+\d]/g,"");
+    link.textContent = phone;
+    link.style.cssText = "display:inline-block;margin:3px 0 7px;font-size:13px;font-weight:600;color:#087f7a;text-decoration:none";
+    link.setAttribute("aria-label", sp.n + " telefonszáma: " + phone);
+    slot.appendChild(link);
+  });
   if(sp.id === 60){
     loadHelgaPhoto(function(url){
       if(!url || !d.isConnected) return;
