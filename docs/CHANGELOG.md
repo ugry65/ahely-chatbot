@@ -1,3 +1,15 @@
+## 2026-11-11 – Egyszeri, csak olvasó statisztikai szerverellenőrzés automatikus indítása
+
+- Cél: a meglévő manuális SFTP-ellenőrző workflow elindítása külön GitHub Actions dispatch jogosultság nélkül, a felülvizsgált PR mainre merge-elésével.
+- Kiinduló main SHA: 367ddd8ab574038b6f4ef33e98a65d47a13778c0.
+- Érintett: .github/workflows/inspect-stats.yml; docs/CHANGELOG.md.
+- Változás: workflow_dispatch mellé csak a workflow fájl main push eseményére korlátozott trigger. Az ellenőrzés csak letölt, szerkezeti booleanokat közöl, nem tölt fel vagy módosít szerverfájlt.
+- Teszt és élesítés: PR ellenőrzések után merge; futás eredményét külön kell igazolni. A workflow GitHubon fut, nem PHP-deploy.
+- Visszaállítás: a push trigger későbbi külön PR-rel eltávolítható; szerveroldali rollback nem szükséges.
+- Nyitott: a tényleges szerverstruktúra megismerése, a phone_link_clicked statisztikai riport megvalósítása és ellenőrzése.
+
+---
+
 ## 2026-11-11 – Szerveroldali statisztika biztonságos, csak olvasó ellenőrzésének előkészítése
 
 - Cél: a GitHub Actions meglévő SFTP hitelesítésével az éles stats.php és log.php szerkezetének biztonságos ellenőrzése, a forráskód vagy titkok nyilvánosságra hozatala nélkül.
