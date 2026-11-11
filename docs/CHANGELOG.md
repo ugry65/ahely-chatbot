@@ -1,3 +1,18 @@
+## 2026-11-11 18:31 CET – Telefonkattintás-mérés élesítési zárás és AI-átadás
+
+- **Cél / jóváhagyás:** a felhasználó kérésére a telefonszám-kattintások statisztikai megjelenítésének élesítése és dokumentálása.
+- **Kiinduló SHA-k:** PHP deploy előtt `88d651ef481119f274e1671ba4e947b4f899acf8`, frontend előtt `54accce6100ccaf934b9a8cbf2404257a30f768b`; **végső élesített main SHA:** `73d2df7387bbc1d55a63a44d7a5c88d2703873cc`.
+- **Érintett fájlok:** `ahely_v8.html`, `tests/name-search.spec.js`, `scripts/patch_phone_stats.py`, `.github/workflows/deploy-phone-stats.yml`, szerveroldali `stats.php`; `log.php` és `chat_stats.sqlite` változatlan.
+- **PR-ek:** [#10](https://github.com/ugry65/ahely-chatbot/pull/10) PHP patch és dry-run; [#11](https://github.com/ugry65/ahely-chatbot/pull/11) biztonságos PHP deploy; [#13](https://github.com/ugry65/ahely-chatbot/pull/13) frontend naplózás. Mindhárom összevonva. #7 és #12 korábbi, konfliktusos/duplikált PR-ek nyitva; nem tekintendők élesnek.
+- **Működés:** `phone_link_clicked` esemény szakembernévvel, ID-val, kontextussal, `measurement_version=2` értékkel; telefonszám nélkül. A tölcsér egyedi kereséseket, a szakemberenkénti tábla és CSV kattintási eseményeket számlál. A kattintás nem igazolt telefonhívás.
+- **Automatikus tesztek:** Python-egységtesztek és Playwright regresszió sikeres; éles `stats.php` dry-run és PHP lint sikeres ([run 43067272722](https://github.com/ugry65/ahely-chatbot/actions/runs/43067272722)).
+- **Telepítés:** `stats.php` SFTP deploy [run 43068322435](https://github.com/ugry65/ahely-chatbot/actions/runs/43068322435) sikeres, hitelesítési hash változatlan, SFTP bájtszintű visszaolvasás sikeres; frontend [run 43068812195](https://github.com/ugry65/ahely-chatbot/actions/runs/43068812195) sikeres.
+- **Adatbiztonság / visszaállítás:** eredeti `stats.php.rollback.php` mentés a szerveren; visszaállítás SFTP átnevezéssel. Frontend rollback: a #13 merge commit `73d2df7387bbc1d55a63a44d7a5c88d2703873cc` revertje és új automatikus deploy. Az adatbázis és a naplózó PHP nem módosult. Titkok nem kerültek GitHubba.
+- **Nem igazolt / nyitott:** valós `log.php` eseménybefogadás és SQLite írás, hitelesített `stats.php` HTTP-felület és CSV, valós telefonkattintás E2E tesztje; #7 és #12 lezárása; coaching `[9]` vs. `[9,60]` üzleti szabályeltérés tisztázása. **Státusz: technikai telepítés igazolt, teljes éles működés még nem.**
+- **Drive 00–03:** 2026-11-11-i dátumozott kiegészítések a forrástérképhez, architektúrához, fejlesztési naplóhoz és teszt/rollback protokollhoz. A régi 2026-11-09-i pillanatképek történeti adatok.
+
+---
+
 ## 2026-11-11 – Telefonszám-kattintás frontend élesítés (aktuális main)
 
 - Cél: a szakemberkártya tel: linkjének phone_link_clicked naplózása az élesített stats.php kimutatáshoz.
