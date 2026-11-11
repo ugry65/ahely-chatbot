@@ -29,8 +29,8 @@ jobs:
           SSHPASS: ${{ secrets.SFTP_PASSWORD }}
         run: |
           set -euo pipefail
-          sshpass -e sftp -b - -P "$SFTP_PORT" \
-            -oBatchMode=no -oStrictHostKeyChecking=accept-new \
+          sshpass -e sftp -oBatchMode=no -b - -P "$SFTP_PORT" \
+            -oStrictHostKeyChecking=accept-new \
             -oConnectTimeout=30 -oServerAliveInterval=15 -oServerAliveCountMax=3 \
             "$SFTP_USER@$SFTP_HOST" << 'SFTP'
           ls -l ahely_v8.html
