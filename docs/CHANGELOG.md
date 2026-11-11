@@ -1,5 +1,13 @@
 # Fejlesztési napló
 
+## 2026-11-11 – Vezetéknév elejére szűkített keresés
+
+- Felhasználói pontosítás: a találati listát a vezetéknév eleje alapján kell szűkíteni, a keresztnév vagy a név belsejének betűegyezése ne adjon találatot.
+- „k” → kizárólag Keul Andrea és Kocka Alexandra; „ke” → Keul Andrea. Andrea, Imre és Krisztina keresztnevekre nem ad névlistát.
+- A Dr. előtagot figyelmen kívül hagyja; „p” és „perger” megtalálja Dr. Perger Mónikát. A teljes név vezetéknévtől kezdve továbbra is beírható.
+- Az ékezetkezelés és az elírás-javaslat megmarad, az elírást is kizárólag a név elejéhez méri, egyező kezdőbetűvel. A bevezető szöveg vezetéknevet kér.
+- Új regressziós ellenőrzés kizárja a képen jelzett keresztnév-találatokat. Az összes meglévő kereső-, ajánlási és mobiltesztet újrafuttatjuk.
+
 ## 2026-11-11 – Gépelés közbeni névkeresés
 
 - Probléma: a névkeresés elküldés után futott, az első egyezést választotta, és nem kínált választható találati listát. Az elírt név nem adott megfelelő segítséget.

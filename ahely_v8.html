@@ -609,7 +609,7 @@ function pick(lbl, val){
   if(step === 0){
     if(val === "konkret"){
       step = -1;
-      botMsg("Kezdd el beírni a szakember vezeték- vagy keresztnevét! Már az első betűtől megjelennek a találatok. Válassz a gépelés közben szűkülő listából.");
+      botMsg("Kezdd el beírni a szakember vezetéknevét! Már az első betűtől megjelennek a találatok. Válassz a gépelés közben szűkülő listából.");
       document.getElementById("inp").value = "";
       showInputRow("Kezdd el beírni a szakember nevét...");
       updateNameSuggestions();
@@ -653,33 +653,20 @@ function nameDistance(a,b){
   return d[a.length][b.length];
 }
 function getNameMatches(value){
-  var query = nameKey(value);
+  var query = nameKey(value.replace(/^dr\.?\s+/i,""));
   if(!query) return [];
-  var terms = query.split(" ");
   var ranked = SP.map(function(sp){
-    var full = nameKey(sp.n), words = full.split(" ");
-    var direct = terms.every(function(term){
-      return words.some(function(word){ return word.indexOf(term) === 0; });
-    });
-    var partial = terms.every(function(term){ return full.indexOf(term)>-1; });
-    if(direct || partial) return {sp:sp, score:full===query?0:(direct?1:2)};
-    var cost = 0;
-    var fuzzy = terms.every(function(term){
-      var best = Infinity;
-      words.forEach(function(word){
-        if(word.indexOf(term)===0){ best=0; return; }
-        // Három betű alatt csak valódi részletre keresünk.
-        if(term.length<3) return;
-        var limit = term.length>=6?2:1;
-        for(var length=Math.max(1,term.length-limit);length<=Math.min(word.length,term.length+limit);length++){
-          best=Math.min(best,nameDistance(term,word.slice(0,length)));
-        }
-      });
-      var allowed = term.length<3?0:(term.length>=6?2:1);
-      cost+=best;
-      return best<=allowed;
-    });
-    return fuzzy?{sp:sp,score:3+cost}:null;
+    // A keresés a vezetéknév elejéhez kötött; a Dr. nem része a vezetéknévnek.
+    var full = nameKey(sp.n.replace(/^dr\.?\s+/i,""));
+    if(full.indexOf(query)===0) return {sp:sp,score:full===query?0:1};
+    // Az elírás-javaslat is a név elejét vizsgálja, nem a keresztneveket.
+    if(query.length<3 || full[0]!==query[0]) return null;
+    var allowed=query.length>=6?2:1;
+    var best=Infinity;
+    for(var length=Math.max(1,query.length-allowed);length<=Math.min(full.length,query.length+allowed);length++){
+      best=Math.min(best,nameDistance(query,full.slice(0,length)));
+    }
+    return best<=allowed?{sp:sp,score:3+best}:null;
   }).filter(Boolean);
   // A közvetlen találatokat gépelés közben csak szűkítjük. Elírásos javaslat
   // akkor jelenik meg, ha nincs közvetlen találat; mindig a látogató választ.
