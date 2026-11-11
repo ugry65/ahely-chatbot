@@ -435,6 +435,9 @@ function showCard(sp, context){
     callLink.textContent = sp.phone;
     callLink.setAttribute("aria-label",sp.n+" telefonszáma: "+sp.phone);
     callLink.style.cssText = "display:inline-block;margin:3px 0 7px;font-size:13px;font-weight:600;color:#087f7a;text-decoration:none";
+    callLink.addEventListener("click", function(){
+      sendEvent("phone_link_clicked", {name:sp.n, specialist_id:sp.id, context:context || "unknown", measurement_version:2});
+    });
     phoneSlot.appendChild(callLink);
   }
   observeSpecialistCard(d, sp, context);

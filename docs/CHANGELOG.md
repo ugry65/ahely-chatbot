@@ -1,3 +1,17 @@
+## 2026-11-11 – Telefonszám-kattintások mérése (előkészítés, nem éles)
+
+- Cél: a szakemberkártyák hívható telefonszámára történő kattintás megjelenítése a statisztikában.
+- Kiinduló forrás: main, ahely_v8.html blob 26640fdae2846117ecb97887b0c890f40812d368.
+- Változás: a tel: link kattintásakor phone_link_clicked esemény küldése szakemberazonosítóval, névvel és kontextussal, telefonszám nélkül. Dokumentáltuk a szerveroldali stats.php/log.php szükséges módosításait.
+- Érintett fájlok: ahely_v8.html; docs/PHONE_CLICK_STATS_INTEGRATION.md; docs/CHANGELOG.md.
+- Teszt: GitHub PR ellenőrzések és böngészős teszt még nem igazolt; szerveroldali PHP-t és adatbázist nem módosítottunk.
+- Deploy: nincs; PR nyitásra előkészítve. A teljes funkció csak a szerveroldali statisztika módosítása után tekinthető késznek.
+- Visszaállítás: a frontend PR visszavonása; szerveroldali fájl csak külön mentésből.
+- Nyitott: aktuális szerveroldali stats.php és log.php ellenőrzése; PHP statisztikai kijelzés és CSV export; tesztek; éles ellenőrzés; Drive státusz frissítése.
+- Biztonság: az esemény nem tárol telefonszámot; a szerveroldali belépési adatokat nem módosítottuk.
+
+---
+
 # Fejlesztési napló
 
 ## 2026-11-11 – Szakemberadatok, keresés, elérhetőségek és stabilizálás
