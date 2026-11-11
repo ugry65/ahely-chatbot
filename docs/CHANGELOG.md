@@ -1,3 +1,16 @@
+## 2026-11-11 – Spák Brigitta (ID 15) telefonszámának pótlása
+
+- **Felhasználó által megadott, jóváhagyott adat:** Spák Brigitta telefonszáma `+36 70 516 8216` (tárcsázható: `+36705168216`).
+- **Kiinduló main SHA:** `82b1b0d4db21493a1aa0d50edbbf0997a176e5fb`.
+- **Érintett fájlok:** `ahely_v8.html`, `tests/name-search.spec.js`, `docs/CHANGELOG.md`.
+- **Módosítás:** kizárólag az ID 15 szakember `phone` mezőjének hozzáadása. Szakemberlista, coaching szabály, kapacitás, ajánlási és krízislogika változatlan.
+- **Teszt:** telefonszám formátum, 28 telefonszámmal rendelkező és 4 hiányzó szakember, ID 15 pontos számának regressziós ellenőrzése. Első CI futás: 28 sikeres / 2 sikertelen (régi teszt még a Spák telefonszám-link hiányát várta); teszt frissítve, az új futást merge előtt ellenőrizni kell.
+- **Élesítés:** sikeres PR ellenőrzések után merge, automatikus HTML deploy és annak ellenőrzése.
+- **Visszaállítás:** e változtatás commitjának revertje és új automatikus deploy.
+- **Nyitott:** éles böngészőben a telefonszám megjelenítésének manuális ellenőrzése, telefonkattintási adatbefogadás E2E ellenőrzése.
+
+---
+
 ## 2026-11-11 18:31 CET – Telefonkattintás-mérés élesítési zárás és AI-átadás
 
 - **Cél / jóváhagyás:** a felhasználó kérésére a telefonszám-kattintások statisztikai megjelenítésének élesítése és dokumentálása.
