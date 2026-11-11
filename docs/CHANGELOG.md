@@ -2,9 +2,9 @@
 
 - Cél: a GitHub Actions meglévő SFTP hitelesítésével az éles stats.php és log.php szerkezetének biztonságos ellenőrzése, a forráskód vagy titkok nyilvánosságra hozatala nélkül.
 - Kiinduló SHA: main 80084c1d24e79722cb9f5b57186cd8d577df0b47.
-- Érintett fájlok: .github/workflows/inspect-stats.yml, scripts/inspect_stats_structure.py, docs/CHANGELOG.md.
+- Érintett fájlok: .github/workflows/inspect-stats.yml, .github/workflows/inspect-stats-ci.yml, scripts/inspect_stats_structure.py, docs/CHANGELOG.md.
 - Biztonság: nyilvános repository miatt a szerveroldali fájlok nem kerülhetnek logba, artifactba vagy commitba. A workflow kizárólag lokálisan olvas és strukturális igen/nem eredményeket közöl.
-- Teszt: Actions futás és SFTP letöltés még nem igazolt.
+- Teszt: Python-szintaxis és pozitív/negatív fixture-ellenőrzés CI-workflow-ja hozzáadva; Actions futás és SFTP letöltés még nem igazolt.
 - Élesítés: nincs; manuális workflow a mainre történő ellenőrzött merge után érhető el.
 - Visszaállítás: PR bezárása vagy workflow commit revert.
 - Nyitott: élő fájlok szerkezetének ellenőrzése, statisztikai módosítás biztonságos tesztelése és telepítése, phone_link_clicked esemény megjelenítése, éles ellenőrzés.
