@@ -1,0 +1,24 @@
+{
+  "name": "ahely-chatbot",
+  "version": "1.0.0",
+  "description": "A Hely szakemberkereső",
+  "scripts": {
+    "test": "playwright test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ugry65/ahely-chatbot.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/ugry65/ahely-chatbot/issues"
+  },
+  "homepage": "https://github.com/ugry65/ahely-chatbot#readme",
+  "devDependencies": {
+    "@playwright/test": "^1.65.0"
+  },
+  "private": true
+}

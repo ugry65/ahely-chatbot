@@ -33,7 +33,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 #restartRow{display:flex;padding:0.5rem 1rem 0;background:#fff;flex-shrink:0;border-top:1px solid #eee}
 #restartBottom{background:#fff;border:1.5px solid #ddd;border-radius:22px;padding:9px 14px;font-size:13px;color:#666;cursor:pointer;font-family:inherit;font-weight:500;flex-shrink:0;white-space:nowrap;transition:all 0.15s}
 #restartBottom:hover{background:#f5f5f5;border-color:#bbb;color:#333}
-#inp{flex:1;border:1px solid #ccc;border-radius:22px;padding:9px 14px;font-size:14px;outline:none;font-family:inherit;background:#fafafa}
+#inp{min-width:0;flex:1;border:1px solid #ccc;border-radius:22px;padding:9px 14px;font-size:14px;outline:none;font-family:inherit;background:#fafafa}
 #inp:focus{border-color:#0BE7DF;background:#fff}
 #go{background:#0BE7DF;color:#fff;border:none;border-radius:22px;padding:9px 18px;cursor:pointer;font-size:14px;font-weight:500;font-family:inherit}
 #go:disabled{background:#ccc}
@@ -62,6 +62,15 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
   #restartBottom{padding:9px 10px;font-size:12px}
   #disclaimer{font-size:9px;padding:5px 12px;line-height:1.35}
 }
+
+#nameSuggestions{flex-shrink:0;padding:8px 16px;border-top:1px solid #c8f5f3;background:#fff}
+#nameSuggestions[hidden]{display:none}
+#wrap.nameSearchOpen #scrollArea{min-height:0}
+#nameSearchStatus{font-size:13px;color:#555;margin-bottom:5px}
+#nameOptions{position:relative;max-height:26vh;overflow-y:auto;overscroll-behavior:contain}
+.nameOption{padding:10px 12px;border-radius:8px;cursor:pointer;color:#1a1a1a;line-height:1.4}
+.nameOption:hover,.nameOption[aria-selected="true"]{background:#e0fafa;outline:2px solid #007A76;outline-offset:-2px}
+.nameOption small{display:block;font-size:12px;color:#555}
 </style>
 </head>
 <body>
@@ -78,11 +87,15 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
     <div id="msgs"></div>
     <div id="btns" class="off"></div>
   </div>
+  <div id="nameSuggestions" hidden>
+    <div id="nameSearchStatus" role="status" aria-live="polite" aria-atomic="true"></div>
+    <div id="nameOptions" role="listbox" aria-label="Talált szakemberek"></div>
+  </div>
   <div id="restartRow">
     <button id="restartBottom" onclick="restart()" title="Keresés újraindítása">↺ Keresés újraindítása</button>
   </div>
   <div id="row">
-    <input id="inp" placeholder="Válassz vagy írj ide szabadon..." onkeydown="if(event.key==='Enter'){doSend()}">
+    <input id="inp" placeholder="Válassz vagy írj ide szabadon..." aria-label="Üzenet vagy szakember neve" autocomplete="off" oninput="updateNameSuggestions()" onkeydown="handleInputKey(event)">
     <button id="go" onclick="doSend()">Küldés</button>
   </div>
 </div>
@@ -454,6 +467,7 @@ function showCardsGrouped(list, context, onEach){
 // jelenik meg - ott a gombok közül kell választani, a szabad szöveg nem releváns.
 var FREE_TEXT_STEPS = [];
 function hideInputRow(){
+  clearNameSuggestions();
   document.getElementById("row").className = "off";
 }
 function showInputRow(placeholder){
@@ -536,6 +550,8 @@ function checkLogic(temak){
 function restart(){
   state = {kor:null, vegzettseg:null, nem:null, forma:null, temak:[]};
   step = 0;
+  document.getElementById("inp").value = "";
+  clearNameSuggestions();
   selectedTopics = [];
   busy = false;
   freeTextSearch = false;
@@ -593,8 +609,11 @@ function pick(lbl, val){
   if(step === 0){
     if(val === "konkret"){
       step = -1;
-      botMsg("Írd be a keresett szakember nevét, és azonnal megmutatom a profilját!");
-      showInputRow("Írd be a szakember nevét...");
+      botMsg("Kezdd el beírni a szakember vezeték- vagy keresztnevét! Már az első betűtől megjelennek a találatok. Válassz a gépelés közben szűkülő listából.");
+      document.getElementById("inp").value = "";
+      showInputRow("Kezdd el beírni a szakember nevét...");
+      updateNameSuggestions();
+      document.getElementById("inp").focus();
     } else {
       step = 1;
       botMsg("1. Kinek keresel segítséget?");
@@ -612,12 +631,166 @@ function pick(lbl, val){
   }
 }
 
+// A névlista helyben szűr: a beírt töredékek nem kerülnek hálózati kérésbe.
+var nameMatches = [];
+var activeNameIndex = -1;
+function nameKey(value){
+  return norm(value.replace(/[-‐‑–—]/g, " "));
+}
+// Damerau–Levenshtein: a felcserélt szomszédos betű is egy elírás.
+function nameDistance(a,b){
+  var d = [], i, j;
+  for(i=0;i<=a.length;i++){
+    d[i] = [i];
+    for(j=1;j<=b.length;j++){
+      if(i===0){ d[i][j]=j; continue; }
+      d[i][j]=Math.min(d[i-1][j]+1,d[i][j-1]+1,d[i-1][j-1]+(a[i-1]===b[j-1]?0:1));
+      if(i>1 && j>1 && a[i-1]===b[j-2] && a[i-2]===b[j-1]){
+        d[i][j]=Math.min(d[i][j],d[i-2][j-2]+1);
+      }
+    }
+  }
+  return d[a.length][b.length];
+}
+function getNameMatches(value){
+  var query = nameKey(value);
+  if(!query) return [];
+  var terms = query.split(" ");
+  var ranked = SP.map(function(sp){
+    var full = nameKey(sp.n), words = full.split(" ");
+    var direct = terms.every(function(term){
+      return words.some(function(word){ return word.indexOf(term) === 0; });
+    });
+    var partial = terms.every(function(term){ return full.indexOf(term)>-1; });
+    if(direct || partial) return {sp:sp, score:full===query?0:(direct?1:2)};
+    var cost = 0;
+    var fuzzy = terms.every(function(term){
+      var best = Infinity;
+      words.forEach(function(word){
+        if(word.indexOf(term)===0){ best=0; return; }
+        // Három betű alatt csak valódi részletre keresünk.
+        if(term.length<3) return;
+        var limit = term.length>=6?2:1;
+        for(var length=Math.max(1,term.length-limit);length<=Math.min(word.length,term.length+limit);length++){
+          best=Math.min(best,nameDistance(term,word.slice(0,length)));
+        }
+      });
+      var allowed = term.length<3?0:(term.length>=6?2:1);
+      cost+=best;
+      return best<=allowed;
+    });
+    return fuzzy?{sp:sp,score:3+cost}:null;
+  }).filter(Boolean);
+  // A közvetlen találatokat gépelés közben csak szűkítjük. Elírásos javaslat
+  // akkor jelenik meg, ha nincs közvetlen találat; mindig a látogató választ.
+  var exact = ranked.filter(function(item){return item.score<3;});
+  if(exact.length) ranked=exact;
+  return ranked.sort(function(a,b){
+    return a.score-b.score || a.sp.n.localeCompare(b.sp.n,"hu");
+  }).map(function(item){return item.sp;});
+}
+function clearNameSuggestions(){
+  nameMatches=[];
+  activeNameIndex=-1;
+  document.getElementById("nameSuggestions").hidden=true;
+  document.getElementById("wrap").classList.remove("nameSearchOpen");
+  document.getElementById("nameOptions").innerHTML="";
+  document.getElementById("nameSearchStatus").textContent="";
+  var inp=document.getElementById("inp");
+  inp.removeAttribute("role");
+  inp.removeAttribute("aria-autocomplete");
+  inp.removeAttribute("aria-controls");
+  inp.removeAttribute("aria-expanded");
+  inp.removeAttribute("aria-activedescendant");
+}
+function selectNameResult(id){
+  if(step!==-1 || busy) return;
+  var sp=SP.find(function(item){return item.id===id;});
+  if(!sp) return;
+  document.getElementById("inp").value="";
+  clearNameSuggestions();
+  userMsg(sp.n);
+  hideBtns();
+  botMsg(sp.n+" profilját itt találod:");
+  showCard(sp,"name_search");
+  botMsg("Másik szakemberhez kezdd el beírni a nevét, vagy indíts új keresést!");
+  showInputRow("Kezdd el beírni a szakember nevét...");
+  document.getElementById("inp").focus();
+}
+function updateNameSuggestions(){
+  clearNameSuggestions();
+  if(step!==-1 || busy) return;
+  var inp=document.getElementById("inp");
+  inp.setAttribute("role","combobox");
+  inp.setAttribute("aria-autocomplete","list");
+  inp.setAttribute("aria-controls","nameOptions");
+  inp.setAttribute("aria-expanded","false");
+  if(!nameKey(inp.value)) return;
+  nameMatches=getNameMatches(inp.value);
+  document.getElementById("nameSuggestions").hidden=false;
+  document.getElementById("wrap").classList.add("nameSearchOpen");
+  inp.setAttribute("aria-expanded",nameMatches.length?"true":"false");
+  document.getElementById("nameSearchStatus").textContent=nameMatches.length
+    ? nameMatches.length+" találat. Válassz a listából!"
+    : "Nincs találat. Próbálj más névrészletet, vagy javíts a beírt betűkön!";
+  var list=document.getElementById("nameOptions");
+  nameMatches.forEach(function(sp,index){
+    var option=document.createElement("div");
+    option.id="name-option-"+sp.id;
+    option.className="nameOption";
+    option.setAttribute("role","option");
+    option.setAttribute("aria-selected","false");
+    option.textContent=sp.n;
+    var role=document.createElement("small");
+    role.textContent=sp.r;
+    option.appendChild(role);
+    option.onmousedown=function(event){event.preventDefault();};
+    option.onclick=function(){selectNameResult(sp.id);};
+    list.appendChild(option);
+  });
+}
+function handleInputKey(event){
+  if(event.isComposing) return;
+  if(step===-1){
+    if(event.key==="Escape"){
+      event.preventDefault(); clearNameSuggestions(); return;
+    }
+    if(event.key==="ArrowDown" || event.key==="ArrowUp"){
+      event.preventDefault();
+      if(document.getElementById("nameSuggestions").hidden) updateNameSuggestions();
+      if(!nameMatches.length) return;
+      activeNameIndex=activeNameIndex<0
+        ?(event.key==="ArrowDown"?0:nameMatches.length-1)
+        :(activeNameIndex+(event.key==="ArrowDown"?1:-1)+nameMatches.length)%nameMatches.length;
+      nameMatches.forEach(function(sp,index){
+        document.getElementById("name-option-"+sp.id).setAttribute("aria-selected",String(index===activeNameIndex));
+      });
+      var active=document.getElementById("name-option-"+nameMatches[activeNameIndex].id);
+      document.getElementById("inp").setAttribute("aria-activedescendant",active.id);
+      var list=document.getElementById("nameOptions");
+      if(active.offsetTop<list.scrollTop) list.scrollTop=active.offsetTop;
+      else if(active.offsetTop+active.offsetHeight>list.scrollTop+list.clientHeight){
+        list.scrollTop=active.offsetTop+active.offsetHeight-list.clientHeight;
+      }
+      return;
+    }
+    if(event.key==="Enter"){
+      event.preventDefault();
+      if(activeNameIndex>=0) selectNameResult(nameMatches[activeNameIndex].id);
+      else doSend();
+      return;
+    }
+  }
+  if(event.key==="Enter"){event.preventDefault();doSend();}
+}
+
+
 // Szabad szöveges input
 function doSend(){
   var inp = document.getElementById("inp");
   var val = inp.value.trim();
   if(!val || busy) return;
-  inp.value = "";
+  if(step !== -1) inp.value = "";
 
   // Krízis szavak
   var krizisok = ["ongyilkos","onsertes","meghalni","vegezni","bantom magam"];
@@ -631,7 +804,9 @@ function doSend(){
     }
   }
 
-  // Névkeresés — MINDIG fut, bármely lépésben
+  if(step === -1){ updateNameSuggestions(); return; }
+
+  // Névkeresés — a névkeresési módon kívüli meglévő szöveges útvonal
   var found = findSP(val);
   if(found){
     userMsg(val);
@@ -643,14 +818,6 @@ function doSend(){
   }
 
   // Lépés alapú kezelés
-  if(step === -1){
-    // Névkeresési módban vagyunk de nem találtuk
-    userMsg(val);
-    botMsg("Nem találtam ilyen nevű szakembert. Próbálj pontosabb nevet írni (pl. Keul Andrea, Oláh Imre), vagy indítsd el a kérdéssort a gombokkal!");
-    step = 0;
-    showBtns("start");
-    return;
-  }
 
   if(step === 5){
     state.temak = [val];
