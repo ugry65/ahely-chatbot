@@ -13,3 +13,7 @@
 - Élesítés: a módosítás pull requestből kerül a main ágra; a meglévő Deploy workflow tölti fel SFTP-n. Az éles változatot feltöltés után külön vissza kell ellenőrizni.
 
 Megjegyzés: a korábbi, különálló #1 PR (kötelező naplózás és általános minőségellenőrzés) a munka kezdetén nyitott, az utolsó futása sikertelen volt. Ezt a változtatást nem vontuk össze vele, és nem tekintjük annak automatizálását befejezettnek.
+
+### Élesítési környezet javítása
+
+A #2 PR összevonása (`39d64ac`) után indult `43038948767` feltöltés az lftp rendszercsomag telepítésénél hibával leállt: az Ubuntu csomagtárainak DNS-feloldása sikertelen volt (exit 100). A külön javítás Ubuntu 24.04-re rögzíti a futtatógépet, és annak előtelepített `sshpass` + OpenSSH `sftp` eszközét használja azonos GitHub SFTP-titkokkal és azonos távoli fájlnévvel. A jelszó környezeti változóban kerül átadásra. Az SFTP batch hibánál leáll; a kapcsolódás és a teljes futás időkorlátot kapott. Nem változik a kiszolgált HTML. Az éles feltöltést és a nyilvános oldal működését ezután újra ellenőrizni kell.
