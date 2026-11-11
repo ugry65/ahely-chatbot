@@ -1,0 +1,72 @@
+name: Deploy phone-click statistics with server-side rollback
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/deploy-phone-stats.yml']
+permissions:
+  contents: read
+concurrency:
+  group: ahely-server-stats-deploy
+  cancel-in-progress: false
+jobs:
+  deploy:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Patch, validate, back up and deploy live stats.php
+        env:
+          SFTP_HOST: ${{ secrets.SFTP_HOST }}
+          SFTP_PORT: ${{ secrets.SFTP_PORT }}
+          SFTP_USER: ${{ secrets.SFTP_USER }}
+          SSHPASS: ${{ secrets.SFTP_PASSWORD }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          umask 077
+          cd "$RUNNER_TEMP"
+          mkdir -p ahely-stats-deploy
+          cd ahely-stats-deploy
+          trap 'rm -f stats.php stats.patched.php stats.verify.php' EXIT
+          sftp_cmd() {
+            sshpass -e sftp -oBatchMode=no -b - -P "$SFTP_PORT" \
+              -oStrictHostKeyChecking=accept-new -oConnectTimeout=30 \
+              "$SFTP_USER@$SFTP_HOST"
+          }
+          printf 'get stats.php stats.php\nbye\n' | sftp_cmd
+          python3 "$GITHUB_WORKSPACE/scripts/patch_phone_stats.py" stats.php stats.patched.php
+          php -l stats.patched.php
+          python3 - <<'PY'
+          from pathlib import Path
+          src=Path('stats.php').read_bytes()
+          dst=Path('stats.patched.php').read_bytes()
+          assert b'phone_link_clicked' not in src
+          assert dst.count(b'phone_link_clicked') >= 5
+          assert src.split(b"define('STATS_PASS_HASH', ",1)[1].split(b');',1)[0] == dst.split(b"define('STATS_PASS_HASH', ",1)[1].split(b');',1)[0]
+          print('Pre-deploy structural and auth integrity checks passed')
+          PY
+          # Remote backup has .php extension so the web server interprets it as PHP,
+          # never exposing raw source. Retain for rollback; contains existing Basic Auth.
+          # Stop rather than overwrite an earlier rollback copy.
+          printf 'ls stats.php.rollback.php\nbye\n' | sftp_cmd > backup-exists.log 2>&1 && {
+            echo 'Existing rollback file detected; refusing to overwrite'; exit 1;
+          }
+          rm -f backup-exists.log
+          printf 'put stats.patched.php stats.php.uploading.php\nbye\n' | sftp_cmd
+          # Preserve the original before replacing. No database files are touched.
+          printf 'rename stats.php stats.php.rollback.php\nrename stats.php.uploading.php stats.php\nbye\n' | sftp_cmd || {
+            echo 'SFTP promotion failed, attempting rollback'
+            printf 'rename stats.php.rollback.php stats.php\nbye\n' | sftp_cmd || true
+            exit 1
+          }
+          printf 'get stats.php stats.verify.php\nbye\n' | sftp_cmd || {
+            echo 'Readback failed; attempting rollback'
+            printf 'rename stats.php stats.php.failed.php\nrename stats.php.rollback.php stats.php\nbye\n' | sftp_cmd || true
+            exit 1
+          }
+          if ! cmp -s stats.patched.php stats.verify.php; then
+            echo 'Readback mismatch; attempting rollback'
+            printf 'rename stats.php stats.php.failed.php\nrename stats.php.rollback.php stats.php\nbye\n' | sftp_cmd || true
+            exit 1
+          fi
+          echo 'stats.php deployed and byte-for-byte SFTP readback verified; rollback file retained'
