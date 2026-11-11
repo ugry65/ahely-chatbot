@@ -1,0 +1,46 @@
+name: Dry-run phone click stats patch against live PHP (read-only)
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/patch_phone_stats.py'
+      - '.github/workflows/stats-phone-dryrun.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  dryrun:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download live stats.php and test patch locally, never upload
+        env:
+          SFTP_HOST: ${{ secrets.SFTP_HOST }}
+          SFTP_PORT: ${{ secrets.SFTP_PORT }}
+          SFTP_USER: ${{ secrets.SFTP_USER }}
+          SSHPASS: ${{ secrets.SFTP_PASSWORD }}
+        run: |
+          set -euo pipefail
+          umask 077
+          mkdir -p "$RUNNER_TEMP/ahely-stats"
+          cd "$RUNNER_TEMP/ahely-stats"
+          trap 'rm -f stats.php stats.patched.php' EXIT
+          sshpass -e sftp -oBatchMode=no -b - -P "$SFTP_PORT" \
+            -oStrictHostKeyChecking=accept-new -oConnectTimeout=30 \
+            "$SFTP_USER@$SFTP_HOST" <<'SFTP'
+          get stats.php stats.php
+          bye
+          SFTP
+          python3 "$GITHUB_WORKSPACE/scripts/patch_phone_stats.py" stats.php stats.patched.php
+          php -l stats.patched.php
+          python3 - <<'PY'
+          from pathlib import Path
+          src=Path('stats.php').read_text()
+          dst=Path('stats.patched.php').read_text()
+          assert 'phone_link_clicked' not in src
+          assert dst.count('phone_link_clicked') >= 5
+          assert 'STATS_PASS_HASH' in dst
+          assert src.split("define('STATS_PASS_HASH', ",1)[1].split(");",1)[0] == dst.split("define('STATS_PASS_HASH', ",1)[1].split(");",1)[0]
+          print('Dry-run passed: live source preserved, auth hash unchanged, PHP lint passed')
+          PY
