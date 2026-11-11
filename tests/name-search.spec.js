@@ -28,7 +28,7 @@ test('first letter shows choices; each prefix narrows the list', async ({page}) 
 });
 
 test('accentless input and typos offer the expected specialist', async ({page}) => {
-  for (const [query,name] of [['olah','Oláh Imre'],['imre','Oláh Imre'],['keol','Keul Andrea'],['keul andera','Keul Andrea'],['sipos bodor','Sipos-Bodor Anna']]) {
+  for (const [query,name] of [['olah','Oláh Imre'],['keol','Keul Andrea'],['keul andera','Keul Andrea'],['sipos bodor','Sipos-Bodor Anna'],['perger','Dr. Perger Mónika']]) {
     await page.locator('#inp').fill(query);
     await expect(page.getByRole('option').filter({hasText:name}).first()).toBeVisible();
   }
@@ -42,7 +42,7 @@ test('a name absent from the database is not invented', async ({page}) => {
 
 test('ambiguous name requires a choice; keyboard can select', async ({page}) => {
   const input=page.locator('#inp');
-  await input.fill('andrea');
+  await input.fill('k');
   expect(await page.getByRole('option').count()).toBeGreaterThan(1);
   await input.press('Enter');
   await expect(page.locator('.card')).toHaveCount(0);
@@ -74,8 +74,8 @@ test('no results, clearing, escape and reset keep the search usable', async ({pa
 });
 
 test('all matching names remain accessible in a scrollable list', async ({page}) => {
-  await page.locator('#inp').fill('a');
-  const results=await page.evaluate(()=>getNameMatches('a').length);
+  await page.locator('#inp').fill('s');
+  const results=await page.evaluate(()=>getNameMatches('s').length);
   await expect(page.getByRole('option')).toHaveCount(results);
   await page.getByRole('option').last().click();
   await expect(page.locator('.card')).toHaveCount(1);
@@ -110,7 +110,7 @@ test('existing crisis handling is reachable with Enter in name mode', async ({pa
 });
 
 test('the input stays inside the visible panel with the suggestion list open', async ({page}) => {
-  await page.locator('#inp').fill('a');
+  await page.locator('#inp').fill('s');
   const bounds=await page.evaluate(()=>({
     wrap:document.getElementById('wrap').getBoundingClientRect().bottom,
     input:document.getElementById('inp').getBoundingClientRect().bottom,
@@ -118,4 +118,19 @@ test('the input stays inside the visible panel with the suggestion list open', a
   }));
   expect(bounds.input).toBeLessThanOrEqual(bounds.wrap);
   expect(bounds.input).toBeLessThanOrEqual(bounds.viewport);
+});
+
+test('surname prefixes exclude given names and internal letter matches', async ({page}) => {
+  const input=page.locator('#inp');
+  await input.fill('k');
+  const names=await page.getByRole('option').evaluateAll(options=>options.map(el=>el.firstChild.textContent));
+  expect(names).toEqual(['Keul Andrea','Kocka Alexandra']);
+  for(const query of ['andrea','imre','krisztina','arcs']){
+    await input.fill(query);
+    await expect(page.getByRole('option')).toHaveCount(0);
+  }
+  await input.fill('p');
+  await expect(page.getByRole('option').filter({hasText:'Dr. Perger Mónika'})).toBeVisible();
+  await input.fill('dr. perger');
+  await expect(page.getByRole('option')).toHaveCount(1);
 });
