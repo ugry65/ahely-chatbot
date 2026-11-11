@@ -84,7 +84,7 @@ test('all matching names remain accessible in a scrollable list', async ({page})
 
 test('specialist data and recommendation invariants stay intact', async ({page}) => {
   const data=await page.evaluate(()=>({ids:SP.map(sp=>sp.id),capacity:SZABAD_KAPACITAS,coaching:Object.entries(KATEGORIA_MAP).filter(([key])=>key.includes('coach'))}));
-  expect(data.ids).toHaveLength(31);
+  expect(data.ids).toHaveLength(32);
   for (const id of [23,30,37]) expect(data.ids).not.toContain(id);
   expect(data.capacity).toEqual([8,9,15,41,50,53,60]);
   expect(data.coaching.length).toBeGreaterThan(0);
@@ -162,7 +162,7 @@ test('Helga has a direct local photo, proper profile, available capacity and cal
 test('stored phones have consistent display and dialing formats, and missing numbers stay absent', async ({page}) => {
   const audit=await page.evaluate(()=>SP.map(sp=>({id:sp.id,name:sp.n,phone:sp.phone||null})));
   expect(audit.filter(x=>x.phone)).toHaveLength(27);
-  expect(audit.filter(x=>!x.phone).map(x=>x.id).sort((a,b)=>a-b)).toEqual([15,28,39,50]);
+  expect(audit.filter(x=>!x.phone).map(x=>x.id).sort((a,b)=>a-b)).toEqual([15,28,39,50,59]);
   for(const sp of audit.filter(x=>x.phone)){
     expect(sp.phone,sp.name).toMatch(/^\+36 (20|30|70) \d{3} \d{4}$/);
   }
