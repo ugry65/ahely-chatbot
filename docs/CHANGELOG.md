@@ -1,5 +1,29 @@
 # Fejlesztési napló
 
+## 2026-11-11 – Szakemberadatok, keresés, elérhetőségek és stabilizálás
+
+### Végrehajtott változások
+- **Új szakember:** Géczi-Répássy Helga (ID 60); felnőttek 18 éves kortól; a felhasználó által megadott 7 pszichológiai és 6 coaching/tanácsadási témakörhöz rendelve. A kártyája: tanácsadó szakpszichológus, coach; adatlap: `https://a-hely.com/ai/60-geczi-repassy-helga`.
+- **Kapacitás:** Helga az aktív szabad kapacitású listába került. Jelenlegi ID-k: 8, 9, 15, 41, 50, 53, 60. A többi szakember „Várólista lehetséges” státusszal jelenik meg.
+- **Kép:** Helga képe közvetlenül az A-Hely saját tárhelyéről: `https://a-hely.com/images/repasi%20helga%20540.png`. A korábbi külső képhivatkozás és az adatlapból történő dinamikus képkiválasztás megszűnt.
+- **Kettős vezetéknevek:** a névkereső a kötőjeles vezetéknév mindkét tagjának elején talál; pl. „Géczi” és „Répássy” → Géczi-Répássy Helga, „Sipos” és „Bodor” → Sipos-Bodor Anna. Ékezet nélküli beírás és elírás-javaslat támogatott, de a keresztnév önmagában nem keresési kulcs.
+- **Adatlapok:** a szakember-profillinkek egységesen az `/ai/<id>-<slug>` útvonalat használják, nem a korábbi hibás `/munkatarsaink/<id>-<slug>` alakot.
+- **Telefonok:** a Joomla szakember-CSV alapján a 31 szakemberből 27-hez rögzítettük a telefonszámot a `SP` adatlistában. Kijelzés: `+36 XX XXX XXXX`; a kártyákon a titulus alatt közvetlenül hívható `tel:+36XXXXXXXXX` hivatkozás. A telefonok adatlapokból való, futás közbeni lekérdezését megszüntettük.
+- **Hiányzó telefonok:** Spák Brigitta (15), Szász Linda (28), Czimmerman Edit (39), Sipos-Bodor Anna (50). A chatbot nem ad meg helyettük kitalált számot. Spák Brigitta exportált telefonmezője nem volt érvényes telefonszám.
+- **Indulási hiba:** Helga rekordjának beillesztésekor a rekordelválasztó vessző hiánya miatt a chatbot JavaScript-kódja nem indult. A hiányzó elválasztót javítottuk; ez a hiba indokolja a regressziós teszteket.
+
+### Ellenőrzés és ismert korlátok
+- Az utolsó, adatokra vonatkozó `main` commit: `121c71ba`; automatikus Deploy workflow: `43055686934`, sikeresen befejeződött.
+- A `tests/name-search.spec.js` regressziós tesztjeit frissítettük: aktuális szabad kapacitás, [9,60] coaching-besorolás, kettős vezetéknevek, Helga kép/URL/telefon, 27 kitöltött és 4 hiányzó telefonszám. Az automatikus futás eredményét a további ellenőrzésnél külön kell nézni; a kód mentése nem bizonyít böngészős működést.
+- A rögzített telefonszámok **CSV-forrásból** származnak, nem közvetlenül az összes jelenlegi adatlap vizuális felülvizsgálatából. Módosításkor a nyilvános adatlappal ellenőrizendők.
+- Az aktuális karbantartási szabályokat és az adatok leírását a `docs/SPECIALIST_DATA.md` tartalmazza.
+
+### Kapcsolódó változtatások (GitHub commitok)
+`f9ea7af` → felvétel; `6229733` → profil URL; `156837b` → szintaktikai hibajavítás; `6d24069` → kapacitás; `bbf17d1` → korábbi fotóbetöltés; `f84c6c2` → kettős vezetéknév; `c4316e2` → kezdeti telefonszám-megjelenítés; `719a18a` → saját tárhelyes kép; `cbcc252` → adatlap URL; `acda68b` → CSV telefonadatok; `121c71b` → egységes telefonszám-formátum.
+
+---
+
+
 ## 2026-11-11 – Vezetéknév elejére szűkített keresés
 
 - Felhasználói pontosítás: a találati listát a vezetéknév eleje alapján kell szűkíteni, a keresztnév vagy a név belsejének betűegyezése ne adjon találatot.
