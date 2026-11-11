@@ -170,3 +170,20 @@ test('stored phones have consistent display and dialing formats, and missing num
   await page.getByRole('option').filter({hasText:'Spák Brigitta'}).click();
   await expect(page.locator('.card a[href^="tel:"]')).toHaveCount(0);
 });
+
+test('telephone link click sends phone_link_clicked without phone number in payload', async ({page}) => {
+  const events=[];
+  await page.route('**/log.php', async route => {
+    events.push(route.request().postDataJSON());
+    await route.fulfill({status:200,contentType:'application/json',body:'{}'});
+  });
+  await page.locator('#inp').fill('keul');
+  await page.getByRole('option').filter({hasText:'Keul Andrea'}).click();
+  const link=page.locator('.card a[href^="tel:"]').first();
+  await expect(link).toBeVisible();
+  await link.evaluate(el=>el.click());
+  await expect.poll(()=>events.some(x=>x.event_type==='phone_link_clicked')).toBe(true);
+  const click=events.find(x=>x.event_type==='phone_link_clicked');
+  expect(click.event_data.specialist_id).toBe(8);
+  expect(JSON.stringify(click)).not.toContain('+36');
+});

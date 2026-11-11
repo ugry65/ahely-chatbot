@@ -1,3 +1,17 @@
+## 2026-11-11 – Telefonszám-kattintás frontend élesítés (aktuális main)
+
+- Cél: a szakemberkártya tel: linkjének phone_link_clicked naplózása az élesített stats.php kimutatáshoz.
+- Kiinduló main SHA: 54accce6100ccaf934b9a8cbf2404257a30f768b.
+- Érintett: ahely_v8.html, tests/name-search.spec.js, docs/CHANGELOG.md.
+- Adatok: név, szakember-ID, kontextus, measurement_version=2; telefonszám nincs a naplózott eseményben.
+- Teszt: Playwright regressziós teszt és teljes browser suite, eredmény merge előtt ellenőrizendő.
+- Élesítés: a szerveroldali stats.php már telepítve, run 43068322435; frontend deploy csak sikeres CI és merge után.
+- Visszaállítás: frontend commit revert, automatikus újradeploy; stats.php.rollback.php mentés külön rendelkezésre áll.
+- Korábbi frontend PR #7 és #12 konfliktusos a közben frissült main miatt; a változást friss mainre újraalkalmaztuk.
+- Nyitott: log.php élő naplózás és statisztikai CSV funkcionális ellenőrzése.
+
+---
+
 ## 2026-11-11 – Éles statisztikai PHP-telepítés előkészítése
 
 - Cél: a sikeres 43067272722 live dry-run után az aktuális stats.php állomány telefonkattintási kiegészítésének ellenőrzött élesítése.
