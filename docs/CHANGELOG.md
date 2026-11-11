@@ -1,3 +1,17 @@
+## 2026-11-11 – Telefonszám-kattintási frontend eseményküldés, friss main alapú PR
+
+- Cél: a szakemberkártyák tel: linkjének kattintását phone_link_clicked eseményként rögzíteni.
+- Kiinduló main SHA: 88d651ef481119f274e1671ba4e947b4f899acf8.
+- Érintett: ahely_v8.html, tests/name-search.spec.js, docs/CHANGELOG.md.
+- Payload: szakembernév, szakember-ID, megjelenési kontextus, mérési verzió; telefonszámot nem küld.
+- Korábbi PR #7 konfliktusos; ezt a friss mainre épített változat váltja fel.
+- Teszt: Playwright telefonkattintás-event regresszió hozzáadva; eredmény ellenőrizendő.
+- Élesítés: PR és automatikus ellenőrzések után main merge és deploy; éles böngészőellenőrzés külön.
+- Visszaállítás: a frontend commit revertje és új deploy.
+- Nyitott: szerveroldali stats.php élesítése és log.php event-ingestion megerősítése.
+
+---
+
 ## 2026-11-11 – Telefonszám-kattintás statisztikai PHP-frissítés: biztonságos dry-run
 
 - Cél: a phone_link_clicked esemény megjelenítése a keresési tölcsérben, szakemberenkénti táblázatban és CSV-exportban.
