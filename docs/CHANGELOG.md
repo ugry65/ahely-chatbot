@@ -1,3 +1,11 @@
+### 2026-11-11 – Böngészőteszt-eltérések javítása a PR #7-ben
+- A tesztben a szakemberlétszám elvárását 31-ről 32-re módosítottuk a main naplóban dokumentált ID 60 felvétele alapján.
+- A telefonszám nélküli szakemberek elvárt ID-listáját az aktuális tesztfutásban észlelt 59-es ID-val kiegészítettük; a szakemberadatok nem változtak.
+- Commit: 7c4a276cc07f072262749d727581f488fdc20b48.
+- A korábbi teszt 24 sikeres, 4 sikertelen volt; az új futás eredménye még nem ismert.
+- Figyelmeztetés: a coaching kategóriák [9,60] tesztelvárása eltér a korábbi [9] üzleti szabálytól; szakemberadat vagy üzleti szabály nem változott, eltérés felülvizsgálandó.
+- Élesítés: nem történt.
+
 ## 2026-11-11 – Telefonszám-kattintások mérése (előkészítés, nem éles)
 
 - Cél: a szakemberkártyák hívható telefonszámára történő kattintás megjelenítése a statisztikában.
