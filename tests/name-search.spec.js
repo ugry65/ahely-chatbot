@@ -35,7 +35,7 @@ test('accentless input and typos offer the expected specialist', async ({page}) 
 });
 
 test('a name absent from the database is not invented', async ({page}) => {
-  await page.locator('#inp').fill('repasy');
+  await page.locator('#inp').fill('zzzzunknown');
   await expect(page.getByRole('option')).toHaveCount(0);
   await expect(page.locator('#nameSearchStatus')).toContainText('Nincs találat');
 });
@@ -86,9 +86,9 @@ test('specialist data and recommendation invariants stay intact', async ({page})
   const data=await page.evaluate(()=>({ids:SP.map(sp=>sp.id),capacity:SZABAD_KAPACITAS,coaching:Object.entries(KATEGORIA_MAP).filter(([key])=>key.includes('coach'))}));
   expect(data.ids).toHaveLength(31);
   for (const id of [23,30,37]) expect(data.ids).not.toContain(id);
-  expect(data.capacity).toEqual([8,9,15,41,50,53]);
+  expect(data.capacity).toEqual([8,9,15,41,50,53,60]);
   expect(data.coaching.length).toBeGreaterThan(0);
-  for (const [,ids] of data.coaching) expect(ids).toEqual([9]);
+  for (const [,ids] of data.coaching) expect(ids).toEqual([9,60]);
 });
 
 test('guided age and topic search still renders recommendations', async ({page}) => {
@@ -133,4 +133,40 @@ test('surname prefixes exclude given names and internal letter matches', async (
   await expect(page.getByRole('option').filter({hasText:'Dr. Perger Mónika'})).toBeVisible();
   await input.fill('dr. perger');
   await expect(page.getByRole('option')).toHaveCount(1);
+});
+
+test('both parts of a compound surname resolve without matching given names', async ({page}) => {
+  for(const term of ['g','géczi','geczi','répássy','repassy','repasy','sipos','bodor']){
+    await page.locator('#inp').fill(term);
+    const expected = /sipos|bodor/.test(term) ? 'Sipos-Bodor Anna' : 'Géczi-Répássy Helga';
+    await expect(page.getByRole('option').filter({hasText:expected})).toBeVisible();
+  }
+  for(const firstName of ['helga','anna','andrea']){
+    await page.locator('#inp').fill(firstName);
+    await expect(page.getByRole('option')).toHaveCount(0);
+  }
+});
+
+test('Helga has a direct local photo, proper profile, available capacity and callable phone', async ({page}) => {
+  await page.locator('#inp').fill('repassy');
+  await page.getByRole('option').filter({hasText:'Géczi-Répássy Helga'}).click();
+  const card=page.locator('.card');
+  await expect(card.locator('h4')).toHaveText('Géczi-Répássy Helga');
+  await expect(card.locator('.cap-free')).toBeVisible();
+  await expect(card.locator('img')).toHaveAttribute('src','https://a-hely.com/images/repasi%20helga%20540.png');
+  await expect(card.locator('a[href^="tel:"]')).toHaveAttribute('href','tel:+36303578003');
+  await expect(card.locator('a[href^="tel:"]')).toHaveText('+36 30 357 8003');
+  await expect(card.getByText('Profil megtekintése')).toHaveAttribute('href','https://a-hely.com/ai/60-geczi-repassy-helga');
+});
+
+test('stored phones have consistent display and dialing formats, and missing numbers stay absent', async ({page}) => {
+  const audit=await page.evaluate(()=>SP.map(sp=>({id:sp.id,name:sp.n,phone:sp.phone||null})));
+  expect(audit.filter(x=>x.phone)).toHaveLength(27);
+  expect(audit.filter(x=>!x.phone).map(x=>x.id).sort((a,b)=>a-b)).toEqual([15,28,39,50]);
+  for(const sp of audit.filter(x=>x.phone)){
+    expect(sp.phone,sp.name).toMatch(/^\+36 (20|30|70) \d{3} \d{4}$/);
+  }
+  await page.locator('#inp').fill('spák');
+  await page.getByRole('option').filter({hasText:'Spák Brigitta'}).click();
+  await expect(page.locator('.card a[href^="tel:"]')).toHaveCount(0);
 });
