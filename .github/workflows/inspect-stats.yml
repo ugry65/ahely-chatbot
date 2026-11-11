@@ -1,0 +1,32 @@
+name: Inspect server-side chatbot statistics (read-only)
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Read-only SFTP inspection (no source code or secrets in logs)
+        env:
+          SFTP_HOST: ${{ secrets.SFTP_HOST }}
+          SFTP_PORT: ${{ secrets.SFTP_PORT }}
+          SFTP_USER: ${{ secrets.SFTP_USER }}
+          SSHPASS: ${{ secrets.SFTP_PASSWORD }}
+        run: |
+          set -euo pipefail
+          umask 077
+          mkdir -p "$RUNNER_TEMP/ahely-stats"
+          cd "$RUNNER_TEMP/ahely-stats"
+          sshpass -e sftp -oBatchMode=no -b - -P "$SFTP_PORT" \
+            -oStrictHostKeyChecking=accept-new -oConnectTimeout=30 \
+            "$SFTP_USER@$SFTP_HOST" <<'SFTP'
+          get stats.php stats.php
+          get log.php log.php
+          bye
+          SFTP
+          # Never print or upload these files: repository is PUBLIC and may contain credentials.
+          python3 "$GITHUB_WORKSPACE/scripts/inspect_stats_structure.py" stats.php log.php
+          rm -f stats.php log.php
