@@ -1,3 +1,17 @@
+## 2026-11-11 – Éles statisztikai PHP-telepítés előkészítése
+
+- Cél: a sikeres 43067272722 live dry-run után az aktuális stats.php állomány telefonkattintási kiegészítésének ellenőrzött élesítése.
+- Kiinduló main SHA: 88d651ef481119f274e1671ba4e947b4f899acf8.
+- Érintett: .github/workflows/deploy-phone-stats.yml, docs/CHANGELOG.md; élesítéskor kizárólag a szerver stats.php fájlja.
+- Folyamat: élő stats.php letöltés, fail-closed patch, PHP lint, hitelesítési hash-azonosság, ideiglenes feltöltés, eredeti fájl átnevezése stats.php.rollback.php-re, atomikus átnevezés, bájtszintű SFTP-visszaolvasás.
+- Visszaállítás: szerver stats.php.rollback.php fájl visszanevezése stats.php-ra SFTP-n; automatizált visszaállítás a feltöltés vagy ellenőrzés hibájánál. Az eredeti mentés PHP-kiterjesztésű, a PHP-kiszolgáló végrehajtja, nem nyers forrásként szolgálja ki.
+- Tesztek: PR és workflow futás eredménye külön ellenőrizendő; a korábbi live dry-run sikeres.
+- Adatbázis: chat_stats.sqlite változatlan; szerver log.php változatlan.
+- Élesítés: PR-ben előkészítve, még nem futott; frontend PR #7 konfliktusát külön rendezni kell.
+- Nyitott: élesítés utáni stats.php működés, CSV, frontend kattintás és rollback ellenőrzése.
+
+---
+
 ## 2026-11-11 – Telefonszám-kattintás statisztikai PHP-frissítés: biztonságos dry-run
 
 - Cél: a phone_link_clicked esemény megjelenítése a keresési tölcsérben, szakemberenkénti táblázatban és CSV-exportban.
