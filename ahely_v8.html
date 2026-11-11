@@ -708,24 +708,40 @@ function nameDistance(a,b){
   }
   return d[a.length][b.length];
 }
+// A kötőjeles kettős vezetéknév minden tagjának eleje kereshető.
+// A keresztnév továbbra sem lehet önálló keresési találat.
+function surnameSearchKeys(name){
+  var clean = name.replace(/^dr\.?\s+/i,"").trim();
+  var surname = clean.split(/\s+/)[0];
+  var variants = [nameKey(clean)];
+  if(/[-‐‑–—]/.test(surname)){
+    surname.split(/[-‐‑–—]+/).slice(1).forEach(function(part){
+      var key = nameKey(part);
+      if(key && variants.indexOf(key)===-1) variants.push(key);
+    });
+  }
+  return variants;
+}
 function getNameMatches(value){
   var query = nameKey(value.replace(/^dr\.?\s+/i,""));
   if(!query) return [];
   var ranked = SP.map(function(sp){
-    // A keresés a vezetéknév elejéhez kötött; a Dr. nem része a vezetéknévnek.
-    var full = nameKey(sp.n.replace(/^dr\.?\s+/i,""));
-    if(full.indexOf(query)===0) return {sp:sp,score:full===query?0:1};
-    // Az elírás-javaslat is a név elejét vizsgálja, nem a keresztneveket.
-    if(query.length<3 || full[0]!==query[0]) return null;
+    var keys = surnameSearchKeys(sp.n);
+    if(keys.some(function(key){ return key.indexOf(query)===0; })){
+      return {sp:sp,score:keys.some(function(key){return key===query;})?0:1};
+    }
+    // Elírásjavítás is csak a vezetéknév-tagok elején működik.
+    if(query.length<3) return null;
     var allowed=query.length>=6?2:1;
     var best=Infinity;
-    for(var length=Math.max(1,query.length-allowed);length<=Math.min(full.length,query.length+allowed);length++){
-      best=Math.min(best,nameDistance(query,full.slice(0,length)));
-    }
+    keys.forEach(function(key){
+      if(key[0]!==query[0]) return;
+      for(var length=Math.max(1,query.length-allowed);length<=Math.min(key.length,query.length+allowed);length++){
+        best=Math.min(best,nameDistance(query,key.slice(0,length)));
+      }
+    });
     return best<=allowed?{sp:sp,score:3+best}:null;
   }).filter(Boolean);
-  // A közvetlen találatokat gépelés közben csak szűkítjük. Elírásos javaslat
-  // akkor jelenik meg, ha nincs közvetlen találat; mindig a látogató választ.
   var exact = ranked.filter(function(item){return item.score<3;});
   if(exact.length) ranked=exact;
   return ranked.sort(function(a,b){
