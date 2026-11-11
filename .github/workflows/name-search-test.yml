@@ -1,0 +1,21 @@
+name: Name search browser tests
+on:
+  pull_request:
+    paths:
+      - 'ahely_v8.html'
+      - 'tests/**'
+      - 'package*.json'
+      - 'playwright.config.js'
+      - '.github/workflows/name-search-test.yml'
+jobs:
+  name-search:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: npm test
