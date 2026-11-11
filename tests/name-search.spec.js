@@ -161,8 +161,9 @@ test('Helga has a direct local photo, proper profile, available capacity and cal
 
 test('stored phones have consistent display and dialing formats, and missing numbers stay absent', async ({page}) => {
   const audit=await page.evaluate(()=>SP.map(sp=>({id:sp.id,name:sp.n,phone:sp.phone||null})));
-  expect(audit.filter(x=>x.phone)).toHaveLength(27);
-  expect(audit.filter(x=>!x.phone).map(x=>x.id).sort((a,b)=>a-b)).toEqual([15,28,39,50,59]);
+  expect(audit.filter(x=>x.phone)).toHaveLength(28);
+  expect(audit.filter(x=>!x.phone).map(x=>x.id).sort((a,b)=>a-b)).toEqual([28,39,50,59]);
+  expect(audit.find(x=>x.id===15)?.phone).toBe('+36 70 516 8216');
   for(const sp of audit.filter(x=>x.phone)){
     expect(sp.phone,sp.name).toMatch(/^\+36 (20|30|70) \d{3} \d{4}$/);
   }
