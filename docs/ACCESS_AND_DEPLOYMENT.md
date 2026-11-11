@@ -8,7 +8,9 @@ Ellenőrizve: 2026-11-11.
 - A GitHub-kapcsolat hozzáfér a tárolóhoz. Ezen a gépen a GitHub CLI (`gh`) az `ugry65` fiókkal be van jelentkezve; a jövőbeli munkák kezdetén a bejelentkezést újra ellenőrizni kell. Hitelesítő adatot nem szabad a naplóba vagy a kódba másolni.
 - Az élesítéshez nem kell kiolvasni a tárhely jelszavát: a `.github/workflows/deploy.yml` a GitHubban tárolt SFTP-hozzáférést használja. A main ágra kerülő HTML-módosítás automatikusan elindítja.
 - A jelenlegi workflow Ubuntu 24.04-en az előtelepített `sshpass` és OpenSSH `sftp` eszközt használja; nem telepít Ubuntu-csomagokat. Az SFTP batch használatakor a `-oBatchMode=no` opciónak a `-b -` előtt kell állnia a jelszavas belépéshez.
-- Utolsó igazolt feltöltés: `43039840527`, sikeres (2026-11-11), main commit: `70d02e2`. Az élő HTML egyezett a tesztelt forrással. Az iframe-ben asztali és mobil emulációban is sikeres volt az első betűs keresés, szűkítés, elírás, kattintás, ékezet nélküli és ismételt keresés, majd újraindítás.
+- Korábbi teljes körűen visszaellenőrzött böngészős élesítés: `43039840527`, sikeres (2026-11-11), main commit: `70d02e2`. Az akkori élő HTML egyezett a tesztelt forrással, és az iframe-ben asztali és mobil emulációban a névkereső működött.
+- **Újabb adatmódosítások:** 2026-11-11-én Helga szakemberrekordja, profilképe, keresési besorolásai és kapacitása, a két-tagú vezetéknevek keresése, 27 telefonszám és egységes formátum. Utolsó élesítési ellenőrzés az adatverzióra: Deploy run `43055686934`, `121c71ba`, sikeres. Ez SFTP-telepítésre vonatkozó státusz, nem teljes körű, új böngészős ellenőrzés.
+- Adatkarbantartás, hiányzó telefonszámok és források: [`SPECIALIST_DATA.md`](SPECIALIST_DATA.md). Változástörténet: [`CHANGELOG.md`](CHANGELOG.md).
 - Ha a helyi Git hitelesítője várakozik, a már bejelentkezett GitHub CLI használható a parancshoz kötött `git -c credential.helper= -c 'credential.helper=!gh auth git-credential' push` beállítással. Ez nem írja át a gép általános hitelesítési beállításait.
 
 ## Munkamenet
