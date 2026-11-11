@@ -1,0 +1,20 @@
+name: Test phone stats patch
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'scripts/patch_phone_stats.py'
+      - 'tests/test_phone_stats_patch.py'
+      - '.github/workflows/stats-phone-dryrun.yml'
+      - '.github/workflows/stats-phone-ci.yml'
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Unit tests and syntax
+        run: |
+          python3 -m py_compile scripts/patch_phone_stats.py
+          python3 -m unittest discover -s tests -p 'test_phone_stats_patch.py' -v
