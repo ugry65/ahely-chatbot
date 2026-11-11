@@ -169,7 +169,7 @@ test('stored phones have consistent display and dialing formats, and missing num
   }
   await page.locator('#inp').fill('spák');
   await page.getByRole('option').filter({hasText:'Spák Brigitta'}).click();
-  await expect(page.locator('.card a[href^="tel:"]')).toHaveCount(0);
+  await expect(page.locator('.card a[href^="tel:"]')).toHaveAttribute('href', 'tel:+36705168216');
 });
 
 test('telephone link click sends phone_link_clicked without phone number in payload', async ({page}) => {
