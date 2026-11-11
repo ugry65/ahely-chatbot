@@ -1,3 +1,17 @@
+## 2026-11-11 – Telefonszám-kattintás statisztikai PHP-frissítés: biztonságos dry-run
+
+- Cél: a phone_link_clicked esemény megjelenítése a keresési tölcsérben, szakemberenkénti táblázatban és CSV-exportban.
+- Kiinduló main SHA: 481d35ad22d652171b1797c24aee3befdd1dfa5e. Az éles stats.php és log.php szerkezeti ellenőrzése sikeres: Actions run 43066344346.
+- Érintett: scripts/patch_phone_stats.py, tests/test_phone_stats_patch.py, .github/workflows/stats-phone-dryrun.yml, .github/workflows/stats-phone-ci.yml, docs/CHANGELOG.md.
+- Működés: fail-closed szöveghorgonyokkal, kizárólag a meglévő statisztikai kódot módosítja; meglévő hitelesítési konfigurációt és adatbázist nem érint.
+- Teszt: a Drive-on található 2026-11-07-i referencia stats.php állományon helyi patch + PHP lint sikeres; éles PHP-n dry-run még hátravan. A referencia nem azonosított éles verzió.
+- Biztonság: az éles PHP csak a GitHub runner ideiglenes tárhelyén dolgozható fel, nem kerül repositoryba, artifactba vagy logba. A dry-run nem tölt fel semmit.
+- Élesítés: NEM történt. PR #7 frontend telefonkattintás eseményküldése még külön PR-ben; backend módosítás előtti kontrollált mentés, visszaállítás és tesztek szükségesek.
+- Visszaállítás: a dry-run workflow/patcher commit revertelhető; szerveroldali fájl nem módosult.
+- Nyitott: éles dry-run ellenőrzés, biztonságos deploy/rollback, telefonkattintási frontend PR ellenőrzése, tényleges statisztikai megjelenítés validálása.
+
+---
+
 ## 2026-11-11 – Egyszeri, csak olvasó statisztikai szerverellenőrzés automatikus indítása
 
 - Cél: a meglévő manuális SFTP-ellenőrző workflow elindítása külön GitHub Actions dispatch jogosultság nélkül, a felülvizsgált PR mainre merge-elésével.
