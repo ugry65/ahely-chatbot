@@ -1,0 +1,35 @@
+name: Validate statistics inspection tooling
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/workflows/inspect-stats.yml'
+      - '.github/workflows/inspect-stats-ci.yml'
+      - 'scripts/inspect_stats_structure.py'
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/inspect-stats.yml'
+      - '.github/workflows/inspect-stats-ci.yml'
+      - 'scripts/inspect_stats_structure.py'
+permissions:
+  contents: read
+jobs:
+  validate:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Python syntax
+        run: python3 -m py_compile scripts/inspect_stats_structure.py
+      - name: Verify safe structural output on fixtures
+        run: |
+          set -euo pipefail
+          tmp=$(mktemp -d)
+          trap 'rm -rf "$tmp"' EXIT
+          printf '%s\n' '<?php $funnelMap=[]; $funnelOrder=[]; $spRows=[]; $searches=[]; $x="profile_link_clicked";' > "$tmp/stats.php"
+          printf '%s\n' '<?php $x="event_type";' > "$tmp/log.php"
+          python3 scripts/inspect_stats_structure.py "$tmp/stats.php" "$tmp/log.php" | grep -q 'stats_has_funnelMap=yes'
+          printf '%s\n' '<?php // incompatible' > "$tmp/stats.php"
+          if python3 scripts/inspect_stats_structure.py "$tmp/stats.php" "$tmp/log.php"; then
+            echo 'Expected fail-closed behavior'; exit 1
+          fi
