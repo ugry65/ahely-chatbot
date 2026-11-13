@@ -201,10 +201,10 @@ test('couples therapy is a separate topic with only approved specialists', async
       allIds: SP.map(x => x.id)
     };
   });
-  expect(data.choices).toContain('Párterápia – pároknak');
-  expect(data.choices).toContain('Párkapcsolat / család – egyéni tanácsadás');
+  expect(data.choices).toContain('Párterápia');
+  expect(data.choices).toContain('Párkonzultáció és tanácsadás');
   expect(data.keys).toEqual(['parterapia']);
-  expect(data.ids).toEqual([11,17]);
+  expect(data.ids).toEqual([11,17,22]);
   expect(data.ids.every(id => data.allIds.includes(id))).toBe(true);
   expect(data.legacyKeys).not.toContain('parterapia');
 });
@@ -217,5 +217,5 @@ test('couples therapy candidates never expand to individual counseling specialis
     state.nem = 'mindegy';
     return getCandidates().map(x => x.id).sort((a,b) => a-b);
   });
-  expect(ids).toEqual([11,17]);
+  expect(ids).toEqual([11,17,22]);
 });

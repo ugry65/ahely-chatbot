@@ -1,3 +1,16 @@
+## 2026-11-13 – Párkapcsolati témacímkék és párterápia szakemberlista frissítése
+
+- **Felhasználói döntés:** a két témaválasztó felirat pontosan „Párkonzultáció és tanácsadás” és „Párterápia”; a párterápia szakemberlistájához Mészár Tünde Andrea (ID 22) hozzáadva a korábbi 11 és 17 mellé.
+- **Kiinduló main SHA:** `d2fb06a032dc0379b96aa4411814a96ab4087975`.
+- **Fájlok:** `ahely_v8.html`, `tests/name-search.spec.js`, `docs/CHANGELOG.md`.
+- **Működés:** csak a két választógomb felirata változik, a hozzájuk tartozó választási szöveg és a korábbi párkapcsolati/családi hozzárendelések változatlanok. `KATEGORIA_MAP.parterapia = [11,17,22]`. A pontos `parterapia` kategóriaillesztés továbbra is kizárja a `par` részszavas túlajánlást.
+- **Tesztek:** Playwright desktop/mobil ellenőrzés a témacímkékre, a párterápiás három ID-ra, a korábbi kategória elkülönítésére és a jelöltlistára. CI eredmény külön ellenőrizendő.
+- **Élesítés:** PR + zöld CI + merge + automatikus HTML deploy; tényleges éles böngészős ellenőrzés külön.
+- **Visszaállítás:** merge commit revert és új deploy.
+- **Nyitott:** szabadszöveges AI-keresés párterápiás kizárólagosságának külön vizsgálata.
+
+---
+
 ## 2026-11-13 – Párterápia külön kategória (felhasználói jóváhagyással)
 
 - **Cél:** a közös párterápia megkülönböztetése a párkapcsolati/családi problémákra irányuló egyéni tanácsadástól.
