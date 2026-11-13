@@ -1,3 +1,17 @@
+## 2026-11-13 – Párterápia külön kategória (felhasználói jóváhagyással)
+
+- **Cél:** a közös párterápia megkülönböztetése a párkapcsolati/családi problémákra irányuló egyéni tanácsadástól.
+- **Jóváhagyott üzleti döntés:** új `Párterápia – pároknak` kategóriában kizárólag Ujszászi Andrea (ID 11) és Dr. Perger Mónika (ID 17). Keul Andrea és Lőrincz Noémi párterápiás besorolása nincs jóváhagyva.
+- **Kiinduló main SHA:** `bca470a231bb4cddb8bab188362290aaa0accc4a`.
+- **Fájlok:** `ahely_v8.html`, `tests/name-search.spec.js`, `docs/CHANGELOG.md`.
+- **Módosítás:** új témaválasztó és `parterapia: [11,17]` kategória; explicit kategóriaillesztés kizárja a `par` részszó miatt egyébként bekövetkező túlajánlást. A korábbi párkapcsolat/család kategória hozzárendelése változatlan; címkéje egyéni tanácsadásra pontosítva.
+- **Ellenőrzés:** Playwright teszt az új választó, pontos ID-lista, régi kategória elkülönülése és jelöltek kizárólagossága számára; tényleges CI-eredmény PR-ben ellenőrizendő. Mobil és desktop CI szükséges.
+- **Deploy:** kizárólag sikeres ellenőrzés és merge után; éles böngészős ellenőrzés külön feladat.
+- **Rollback:** a változás merge commitjának revertje, új HTML deploy.
+- **Nyitott:** Keul Andrea és Lőrincz Noémi párterápiás szolgáltatásának üzleti tisztázása; a szabadszöveges AI-útvonal külön vizsgálata.
+
+---
+
 ## 2026-11-11 – Spák Brigitta (ID 15) telefonszámának pótlása
 
 - **Felhasználó által megadott, jóváhagyott adat:** Spák Brigitta telefonszáma `+36 70 516 8216` (tárcsázható: `+36705168216`).

@@ -188,3 +188,34 @@ test('telephone link click sends phone_link_clicked without phone number in payl
   expect(click.event_data.specialist_id).toBe(8);
   expect(JSON.stringify(click)).not.toContain('+36');
 });
+
+
+test('couples therapy is a separate topic with only approved specialists', async ({page}) => {
+  const data = await page.evaluate(() => {
+    const topic = 'Párterápiával kapcsolatban keresek segítséget';
+    return {
+      keys: categoryKeysForTopics([topic]),
+      ids: KATEGORIA_MAP.parterapia,
+      choices: BTNS.tema_felno.map(x => x.l).filter(Boolean),
+      legacyKeys: categoryKeysForTopics(['Párkapcsolati vagy családi problémával kapcsolatban keresek segítséget']),
+      allIds: SP.map(x => x.id)
+    };
+  });
+  expect(data.choices).toContain('Párterápia – pároknak');
+  expect(data.choices).toContain('Párkapcsolat / család – egyéni tanácsadás');
+  expect(data.keys).toEqual(['parterapia']);
+  expect(data.ids).toEqual([11,17]);
+  expect(data.ids.every(id => data.allIds.includes(id))).toBe(true);
+  expect(data.legacyKeys).not.toContain('parterapia');
+});
+
+test('couples therapy candidates never expand to individual counseling specialists', async ({page}) => {
+  const ids = await page.evaluate(() => {
+    state.temak = ['Párterápiával kapcsolatban keresek segítséget'];
+    state.kor = 'felnott';
+    state.vegzettseg = 'mindegy';
+    state.nem = 'mindegy';
+    return getCandidates().map(x => x.id).sort((a,b) => a-b);
+  });
+  expect(ids).toEqual([11,17]);
+});
