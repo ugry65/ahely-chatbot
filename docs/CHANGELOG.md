@@ -5,9 +5,23 @@
 - Minimális változás: ahely_v8.html két címkéje „Párkonzultáció és tanácsadás” és „Párterápia”; parterapia lista [11,17,22]. ID 22 már meglévő rekord, Mészár Tünde Andrea. A témák belső értéke, az egyéni parkapcsolat/par/csalad hozzárendelés és az explicit párterápia-illesztés változatlan.
 - Teszt: tests/name-search.spec.js elvárások frissítve; valódi felno korcsoportkód; pontos kulcs- és ID-lista, régi kategória-listák, gombértékek, teljes vezetett út és három szakemberkártya. Helyben 38/38 desktop/mobil Chromium teszt sikeres. Első új UI-teszt a kapcsolatfelvételi kártyát is megszámolta (36/38); a teszt szelektora javítva.
 - Hatókör/adatvédelem: nincs SP-, kapacitás-, coaching-, PHP-, adatbázis- vagy analitikai változás. A szabadszöveges AI-út külön, korábbról ismert korlátja nem változik; a kizárólagosság a vezetett párterápia-választásra igazolt.
+- Párhuzamos változás: PR #17 a436e6b116e12f10a3f129f1d73b05a69de916e9 időközben ugyanazt a három HTML-sort élesítette. PR #18 friss mainre igazítva már csak tesztet és naplót egészít ki. Éles forrásegyezés igazolt, SHA-256 b6f405a8a250106fc51d74b2a8bc3352828b2f713adbc7e64ed8c746d0b75964; Joomla iframe desktop/mobil Chromiumon mindkét címke és kizárólag ID 11/17/22 kártyája sikeres.
 - Kiadás: PR → sikeres CI → merge → automatikus HTML deploy → éles forrás- és iframe-ellenőrzés. Végső bizonyítékok a PR-ben és a Drive 00–03 dátumozott kiegészítésében.
 - Rollback: e PR squash commitjának revertje, automatikus HTML deploy; kiinduló d2fb06a. Régi történeti bejegyzések megőrizve.
 - Drive átadás/státusz: https://docs.google.com/document/d/1L7x1WFM6bUQk8pGj8csnnV6C8Tgqr398Q_fjKm_ER84/edit ; https://docs.google.com/document/d/1guyOc0FVKDMMbTlPyRMZi7lNOixdOv62b885BhrdvBQ/edit .
+
+---
+
+## 2026-11-13 – Párkapcsolati témacímkék és párterápia szakemberlista frissítése
+
+- **Felhasználói döntés:** a két témaválasztó felirat pontosan „Párkonzultáció és tanácsadás” és „Párterápia”; a párterápia szakemberlistájához Mészár Tünde Andrea (ID 22) hozzáadva a korábbi 11 és 17 mellé.
+- **Kiinduló main SHA:** `d2fb06a032dc0379b96aa4411814a96ab4087975`.
+- **Fájlok:** `ahely_v8.html`, `tests/name-search.spec.js`, `docs/CHANGELOG.md`.
+- **Működés:** csak a két választógomb felirata változik, a hozzájuk tartozó választási szöveg és a korábbi párkapcsolati/családi hozzárendelések változatlanok. `KATEGORIA_MAP.parterapia = [11,17,22]`. A pontos `parterapia` kategóriaillesztés továbbra is kizárja a `par` részszavas túlajánlást.
+- **Tesztek:** Playwright desktop/mobil ellenőrzés a témacímkékre, a párterápiás három ID-ra, a korábbi kategória elkülönítésére és a jelöltlistára. CI eredmény külön ellenőrizendő.
+- **Élesítés:** PR + zöld CI + merge + automatikus HTML deploy; tényleges éles böngészős ellenőrzés külön.
+- **Visszaállítás:** merge commit revert és új deploy.
+- **Nyitott:** szabadszöveges AI-keresés párterápiás kizárólagosságának külön vizsgálata.
 
 ---
 
