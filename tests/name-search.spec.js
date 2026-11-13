@@ -212,10 +212,41 @@ test('couples therapy is a separate topic with only approved specialists', async
 test('couples therapy candidates never expand to individual counseling specialists', async ({page}) => {
   const ids = await page.evaluate(() => {
     state.temak = ['Párterápiával kapcsolatban keresek segítséget'];
-    state.kor = 'felnott';
+    state.kor = 'felno';
     state.vegzettseg = 'mindegy';
     state.nem = 'mindegy';
     return getCandidates().map(x => x.id).sort((a,b) => a-b);
   });
   expect(ids).toEqual([11,17,22]);
+});
+
+
+test('couple topic buttons retain values and legacy category mappings', async ({page}) => {
+  const data=await page.evaluate(()=>({
+    choices:BTNS.tema_felno.filter(x=>/Pár/.test(x.l||'')),
+    maps:['parkapcsolat','par','csalad'].map(k=>[k,KATEGORIA_MAP[k]]),
+    keys:['Párterápia','parterapia','Párterápiával kapcsolatban keresek segítséget'].map(t=>categoryKeysForTopics([t]))
+  }));
+  expect(data.choices).toEqual([
+    {l:'Párkonzultáció és tanácsadás',v:'Párkapcsolati vagy családi problémával kapcsolatban keresek segítséget'},
+    {l:'Párterápia',v:'Párterápiával kapcsolatban keresek segítséget'}
+  ]);
+  expect(data.maps).toEqual([
+    ['parkapcsolat',[8,11,17,41,16,26,29,34,43,59,22,53,15,46,45,44,50,52,28,33,49,60]],
+    ['par',[8,11,17,41,16,26,29,34,43,59,22,53,15,46,45,44,50,52,28,33,49,60]],
+    ['csalad',[8,11,17,41,16,26,29,34,43,59,22,53,45,44,40,52,28,13,33,51,49,50,60]]
+  ]);
+  expect(data.keys).toEqual([['parterapia'],['parterapia'],['parterapia']]);
+});
+
+test('guided couples therapy renders exactly the three approved cards', async ({page}) => {
+  await page.locator('#restartBottom').click();
+  await page.getByRole('button',{name:'Nem, segíts választani!',exact:true}).click();
+  await page.getByRole('button',{name:'Felnőtt (18+)',exact:true}).click();
+  await expect(page.getByRole('button',{name:'Párkonzultáció és tanácsadás',exact:true})).toBeVisible();
+  await page.getByRole('button',{name:'Párterápia',exact:true}).click();
+  await page.getByRole('button',{name:'Tovább a kiválasztott témákkal',exact:true}).click();
+  const specialists=page.locator('.card').filter({has:page.locator('a[href*="/ai/"]')}).locator('h4');
+  await expect(specialists).toHaveCount(3);
+  expect((await specialists.allTextContents()).sort()).toEqual(['Dr. Perger Mónika','Mészár Tünde Andrea','Ujszászi Andrea'].sort());
 });
