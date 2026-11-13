@@ -1,3 +1,16 @@
+## CHB-20261113-02 – Párkapcsolati címkék és Mészár Tünde Andrea
+
+- Dátum/végrehajtó: 2026-11-13, Europe/Budapest; Codex. Kifejezett felhasználói döntés alapján.
+- Kiinduló main: d2fb06a032dc0379b96aa4411814a96ab4087975. Friss main, changelog, nyitott PR #1/#7/#12 és Actions ellenőrizve; előző deploy 43424545160 sikeres. A nyilvános HTML normalizált tartalma a kiinduló mainnel egyezett.
+- Minimális változás: ahely_v8.html két címkéje „Párkonzultáció és tanácsadás” és „Párterápia”; parterapia lista [11,17,22]. ID 22 már meglévő rekord, Mészár Tünde Andrea. A témák belső értéke, az egyéni parkapcsolat/par/csalad hozzárendelés és az explicit párterápia-illesztés változatlan.
+- Teszt: tests/name-search.spec.js elvárások frissítve; valódi felno korcsoportkód; pontos kulcs- és ID-lista, régi kategória-listák, gombértékek, teljes vezetett út és három szakemberkártya. Helyben 38/38 desktop/mobil Chromium teszt sikeres. Első új UI-teszt a kapcsolatfelvételi kártyát is megszámolta (36/38); a teszt szelektora javítva.
+- Hatókör/adatvédelem: nincs SP-, kapacitás-, coaching-, PHP-, adatbázis- vagy analitikai változás. A szabadszöveges AI-út külön, korábbról ismert korlátja nem változik; a kizárólagosság a vezetett párterápia-választásra igazolt.
+- Kiadás: PR → sikeres CI → merge → automatikus HTML deploy → éles forrás- és iframe-ellenőrzés. Végső bizonyítékok a PR-ben és a Drive 00–03 dátumozott kiegészítésében.
+- Rollback: e PR squash commitjának revertje, automatikus HTML deploy; kiinduló d2fb06a. Régi történeti bejegyzések megőrizve.
+- Drive átadás/státusz: https://docs.google.com/document/d/1L7x1WFM6bUQk8pGj8csnnV6C8Tgqr398Q_fjKm_ER84/edit ; https://docs.google.com/document/d/1guyOc0FVKDMMbTlPyRMZi7lNOixdOv62b885BhrdvBQ/edit .
+
+---
+
 ## 2026-11-13 – Párterápia külön kategória (felhasználói jóváhagyással)
 
 - **Cél:** a közös párterápia megkülönböztetése a párkapcsolati/családi problémákra irányuló egyéni tanácsadástól.
